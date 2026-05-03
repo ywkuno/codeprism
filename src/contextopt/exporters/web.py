@@ -276,16 +276,6 @@ pre {
 .node.activity circle { stroke: var(--warn); stroke-width: 4; }
 .node.context circle { stroke: var(--accent); stroke-width: 3; }
 .node.dimmed { opacity: 0.16; }
-.role-badge {
-  fill: rgba(10, 13, 18, 0.84);
-  paint-order: stroke;
-  pointer-events: none;
-  stroke: rgba(10, 13, 18, 0.84);
-  stroke-width: 3;
-  font-size: 8px;
-  font-weight: 800;
-  text-anchor: middle;
-}
 .label { font-size: 12px; fill: rgba(255,255,255,0.88); pointer-events: none; }
 .label.dimmed { opacity: 0.16; }
 .edge { stroke: rgba(166,177,194,0.28); stroke-width: 1.1; }
@@ -1040,14 +1030,6 @@ function renderGraph() {
     circle.setAttribute('fill', roleColor(nodeRoleValue));
     circle.setAttribute('stroke', COLORS[node.kind] || COLORS.unknown);
     g.appendChild(circle);
-    if (!['source', 'project'].includes(nodeRoleValue)) {
-      const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      badge.setAttribute('x', 0);
-      badge.setAttribute('y', 3);
-      badge.setAttribute('class', 'role-badge');
-      badge.textContent = roleBadge(nodeRoleValue);
-      g.appendChild(badge);
-    }
     g.addEventListener('mouseenter', (event) => showTooltip(event, node));
     g.addEventListener('mousemove', moveTooltip);
     g.addEventListener('mouseleave', hideTooltip);

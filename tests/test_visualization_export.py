@@ -22,6 +22,7 @@ def test_visualization_export(tmp_path: Path) -> None:
     assert (out_dir / "app.js").exists()
     assert "clearSelectionBtn" in html.read_text(encoding="utf-8")
     html_text = html.read_text(encoding="utf-8")
+    css_text = (out_dir / "styles.css").read_text(encoding="utf-8")
     js_text = (out_dir / "app.js").read_text(encoding="utf-8")
     assert "layerStructure" in html_text
     assert "layerImports" in html_text
@@ -70,6 +71,9 @@ def test_visualization_export(tmp_path: Path) -> None:
     assert "contextNodeIds" in js_text
     assert "function loadContextOverlay" in js_text
     assert "function renderContextSummary" in js_text
+    assert "role-badge" not in css_text
+    assert "setAttribute('class', 'role-badge')" not in js_text
+    assert "appendChild(badge)" not in js_text
     assert "function showTooltip" in js_text
 
 
