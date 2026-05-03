@@ -42,7 +42,7 @@ HTML = """<!doctype html>
       <label class="toggle"><input id="layerImports" type="checkbox" /> Imports</label>
       <label class="toggle"><input id="layerModules" type="checkbox" /> External modules</label>
       <label class="toggle"><input id="layerTests" type="checkbox" /> Tests</label>
-      <label class="toggle"><input id="layerActivity" type="checkbox" checked /> Activity</label>
+      <label class="toggle"><input id="layerActivity" type="checkbox" checked /> Live Trace</label>
       <label class="toggle"><input id="layerLabels" type="checkbox" checked /> Labels</label>
       <div class="button-row">
         <button id="overviewBtn" type="button">Clean overview</button>
@@ -50,7 +50,7 @@ HTML = """<!doctype html>
       </div>
     </section>
     <section class="panel">
-      <h2>Activity</h2>
+      <h2>Live Trace</h2>
       <div class="button-row">
         <button id="playBtn" type="button">Play</button>
         <button id="pauseBtn" type="button">Pause</button>
@@ -69,7 +69,7 @@ HTML = """<!doctype html>
         <option value="2">2x</option>
         <option value="3">3x</option>
       </select>
-      <div id="activitySummary" class="activity-summary">No activity stream loaded.</div>
+      <div id="activitySummary" class="activity-summary">No Live Trace stream loaded.</div>
       <div id="activityNow" class="activity-now">Ready.</div>
       <label for="activitySearch">Find event</label>
       <input id="activitySearch" placeholder="event, agent, path..." />
@@ -86,7 +86,7 @@ HTML = """<!doctype html>
         <button id="touchedOnlyBtn" type="button">Touched only</button>
       </div>
       <ol id="eventList" class="event-list"></ol>
-      <pre id="activityDetails">No activity stream loaded.</pre>
+      <pre id="activityDetails">No Live Trace stream loaded.</pre>
     </section>
     <section class="panel">
       <h2>Context</h2>
@@ -141,6 +141,7 @@ CSS = """
   --accent: #49d6a3;
   --accent-2: #65b5ff;
   --warn: #f6c85f;
+  --trace: #37f5ff;
 }
 * { box-sizing: border-box; }
 body {
@@ -282,17 +283,25 @@ pre {
 .edge.highlight { stroke: var(--accent); stroke-width: 2.4; }
 .edge.activity { stroke: var(--warn); stroke-width: 3; }
 .activity-trail {
-  stroke: var(--warn);
+  stroke: var(--trace);
   stroke-width: 2;
-  stroke-dasharray: 4 7;
-  opacity: 0.56;
+  stroke-dasharray: 7 9;
+  opacity: 0.72;
+  filter: drop-shadow(0 0 5px rgba(55, 245, 255, 0.38));
+  animation: traceDash 900ms linear infinite;
 }
-.activity-marker-core { fill: var(--warn); stroke: white; stroke-width: 2; }
+.activity-marker-core {
+  fill: var(--trace);
+  stroke: white;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 8px rgba(55, 245, 255, 0.54));
+}
 .activity-marker-ring {
   fill: transparent;
-  stroke: var(--warn);
+  stroke: var(--trace);
   stroke-width: 2;
-  opacity: 0.48;
+  opacity: 0.58;
+  filter: drop-shadow(0 0 7px rgba(55, 245, 255, 0.34));
 }
 .agent-marker {
   pointer-events: none;
@@ -328,6 +337,9 @@ pre {
 #tooltip.visible { opacity: 1; }
 #tooltip strong { display: block; margin-bottom: 3px; }
 #tooltip span { display: block; color: var(--muted); font-size: 0.78rem; overflow-wrap: anywhere; }
+@keyframes traceDash {
+  to { stroke-dashoffset: -32; }
+}
 """
 
 JS = r"""
@@ -388,6 +400,7 @@ const state = {
     events: [],
     warnings: [],
     summary: null,
+    source: '',
     index: -1,
     timer: null,
     speed: 1,
@@ -1184,9 +1197,21 @@ function renderActivityMarker() {
   const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   ring.setAttribute('r', 18);
   ring.setAttribute('class', 'activity-marker-ring');
+  const ringPulse = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+  ringPulse.setAttribute('attributeName', 'r');
+  ringPulse.setAttribute('values', '14;30;14');
+  ringPulse.setAttribute('dur', '1.4s');
+  ringPulse.setAttribute('repeatCount', 'indefinite');
+  const ringFade = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+  ringFade.setAttribute('attributeName', 'opacity');
+  ringFade.setAttribute('values', '0.7;0.16;0.7');
+  ringFade.setAttribute('dur', '1.4s');
+  ringFade.setAttribute('repeatCount', 'indefinite');
   const core = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   core.setAttribute('r', 7);
   core.setAttribute('class', 'activity-marker-core');
+  ring.appendChild(ringPulse);
+  ring.appendChild(ringFade);
   g.appendChild(ring);
   g.appendChild(core);
   activityMarkerLayer.appendChild(g);
@@ -1401,11 +1426,12 @@ function eventMatchesQuery(event, query) {
 function renderActivitySummary() {
   const summary = state.activity.summary;
   if (!summary) {
-    activitySummary.textContent = 'No activity stream loaded.';
+    activitySummary.textContent = 'No Live Trace stream loaded.';
     return;
   }
   const agents = Array.isArray(summary.agents) ? summary.agents.join(', ') : '-';
-  activitySummary.textContent = `${summary.event_count || 0} events - ${summary.agent_count || 0} agents (${agents}) - ${formatTokens(summary.estimated_tokens || 0)}`;
+  const source = state.activity.source ? ` - ${state.activity.source.includes('live-trace') ? 'Live Trace' : 'Activity'} source` : '';
+  activitySummary.textContent = `${summary.event_count || 0} events - ${summary.agent_count || 0} agents (${agents}) - ${formatTokens(summary.estimated_tokens || 0)}${source}`;
 }
 
 function renderActivityNow(event) {
@@ -1424,7 +1450,7 @@ function showActivityEvent() {
   const event = state.activity.events[state.activity.index] || null;
   state.activeEventNodeId = eventNodeId(event);
   if (!event) {
-    activityDetails.textContent = state.activity.events.length ? 'Reset. Press play or next.' : 'No activity stream loaded.';
+    activityDetails.textContent = state.activity.events.length ? 'Reset. Press play or next.' : 'No Live Trace stream loaded.';
     renderActivityNow(null);
     timelineInput.value = 0;
     state.marker.visible = false;
@@ -1486,12 +1512,13 @@ function resetActivity() {
 
 function loadActivity(payload) {
   if (!payload || !Array.isArray(payload.events) || payload.events.length === 0) {
-    activityDetails.textContent = 'No activity stream loaded.';
+    activityDetails.textContent = 'No Live Trace stream loaded.';
     return;
   }
   state.activity.events = payload.events;
   state.activity.warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
   state.activity.summary = payload.summary || null;
+  state.activity.source = payload.source || '';
   state.activity.index = -1;
   updateActivityNodeIds();
   populateActivityFilters();

@@ -23,6 +23,7 @@ from .integrations import (
     doctor_integrations,
     install_integrations,
 )
+from .live_trace import append_live_trace_event, live_trace_path
 from .mapper import map_project
 from .mcp_server import McpDependencyError, mcp_tool_specs, run_mcp_server
 from .memory import MemoryError, list_memories, read_memory, write_memory, write_project_memory
@@ -243,6 +244,18 @@ def main(argv: list[str] | None = None) -> int:
             f"{result.edges_written} edges. Reused {result.files_reused} unchanged, "
             f"extracted {result.files_extracted}, hashed {result.files_hashed}."
         )
+        _trace_event(
+            root,
+            event="map",
+            meta={
+                "files_seen": result.files_seen,
+                "nodes_written": result.nodes_written,
+                "edges_written": result.edges_written,
+                "files_reused": result.files_reused,
+                "files_extracted": result.files_extracted,
+                "files_hashed": result.files_hashed,
+            },
+        )
         return 0
     if args.cmd == "export":
         default_out = {
@@ -267,11 +280,21 @@ def main(argv: list[str] | None = None) -> int:
                 max_chars=args.max_chars,
             )
         print(f"Wrote {out}")
+        _trace_event(
+            root,
+            event="export",
+            path=_relative_trace_path(out, root),
+            meta={"format": args.format, "out": str(out)},
+        )
         return 0
     if args.cmd == "visualize":
         root = Path.cwd().resolve()
         outdir = Path(args.outdir) if args.outdir else artifact_path(root, "visual")
         activity_path = Path(args.activity) if args.activity else None
+        if activity_path is None:
+            trace_candidate = live_trace_path(root)
+            if trace_candidate.exists():
+                activity_path = trace_candidate
         context_path = Path(args.context) if args.context else None
         html_path = export_web_visualization(
             GraphStore(_db_path(root, args.db)),
@@ -280,6 +303,16 @@ def main(argv: list[str] | None = None) -> int:
             context_path=context_path,
         )
         print(f"Wrote visualization to {html_path}")
+        _trace_event(
+            root,
+            event="visualize",
+            path=_relative_trace_path(html_path, root),
+            meta={
+                "outdir": str(outdir),
+                "activity_path": str(activity_path) if activity_path else "",
+                "context_path": str(context_path) if context_path else "",
+            },
+        )
         return 0
     if args.cmd == "setup":
         print("CodePrism Setup")
@@ -363,16 +396,21 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 0
     if args.cmd == "query":
-        for row in query_graph(GraphStore(_db_path(Path.cwd(), args.db)), args.text, args.limit):
+        root = Path.cwd().resolve()
+        rows = list(query_graph(GraphStore(_db_path(root, args.db)), args.text, args.limit))
+        for row in rows:
             print(f"{row['kind']:10} {row['path']} {row['name']}")
+        _trace_event(root, event="query", meta={"text": args.text, "results": len(rows)})
         return 0
     if args.cmd == "references":
+        root = Path.cwd().resolve()
         try:
-            result = find_references(GraphStore(_db_path(Path.cwd(), args.db)), args.node_id)
+            result = find_references(GraphStore(_db_path(root, args.db)), args.node_id)
         except ReferencesError as exc:
             print(f"Error: {exc}", file=sys.stderr)
             return 1
         print(format_references(result), end="")
+        _trace_event(root, event="references", node_id=args.node_id)
         return 0
     if args.cmd == "get":
         root = Path(args.root).resolve()
@@ -386,16 +424,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Error: {exc}", file=sys.stderr)
             return 1
         print(format_retrieved_source(result), end="")
+        _trace_event(root, event="get", node_id=args.node_id)
         return 0
     if args.cmd == "read":
+        root = Path(args.root).resolve()
         try:
             store = (
-                GraphStore(_db_path(Path(args.root).resolve(), args.db))
+                GraphStore(_db_path(root, args.db))
                 if args.mode in {"map", "signatures"}
                 else None
             )
             result = read_path(
-                root=Path(args.root).resolve(),
+                root=root,
                 path=args.path,
                 mode=args.mode,
                 store=store,
@@ -404,6 +444,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Error: {exc}", file=sys.stderr)
             return 1
         print(format_read_result(result), end="")
+        _trace_event(
+            root,
+            event=f"read_{args.mode}",
+            path=result.path,
+            estimated_tokens=result.estimated_tokens,
+            meta={"mode": args.mode},
+        )
         return 0
     if args.cmd == "stats":
         root = Path(args.root).resolve()
@@ -415,6 +462,7 @@ def main(argv: list[str] | None = None) -> int:
             ignore_patterns=config.ignore,
         )
         print(format_stats(stats))
+        _trace_event(root, event="stats", estimated_tokens=stats.get("source_estimated_tokens"), meta=stats)
         return 0
     if args.cmd == "gain":
         root = Path(args.root).resolve()
@@ -427,6 +475,21 @@ def main(argv: list[str] | None = None) -> int:
             ignore_patterns=[*config.ignore, *args.ignore],
         )
         print(format_gain(gain), end="")
+        freshness = gain.get("freshness") if isinstance(gain.get("freshness"), dict) else {}
+        _trace_event(
+            root,
+            event="gain",
+            estimated_tokens=gain.get("source_estimated_tokens"),
+            meta={
+                "freshness_status": freshness.get("status"),
+                "changed_files": len(freshness.get("changed_files", [])),
+                "new_files": len(freshness.get("new_files", [])),
+                "deleted_files": len(freshness.get("deleted_files", [])),
+                "source_to_context_saved_percent": gain.get("source_to_context_saved_percent"),
+                "source_to_graph_saved_percent": gain.get("source_to_graph_saved_percent"),
+                "source_to_slice_saved_percent": gain.get("source_to_slice_saved_percent"),
+            },
+        )
         return 0
     if args.cmd == "onboard":
         root = Path(args.root).resolve()
@@ -443,6 +506,7 @@ def main(argv: list[str] | None = None) -> int:
         out = Path(args.out) if args.out else None
         path = write_project_memory(root, store, notes=args.notes, out=out)
         print(f"Wrote project memory {path}")
+        _trace_event(root, event="onboard", path=_relative_trace_path(path, root))
         return 0
     if args.cmd == "benchmark":
         root = Path(args.root).resolve()
@@ -459,6 +523,12 @@ def main(argv: list[str] | None = None) -> int:
             ignore_patterns=[*config.ignore, *args.ignore],
         )
         print(format_benchmark(result, out), end="")
+        _trace_event(
+            root,
+            event="benchmark",
+            path=_relative_trace_path(out, root),
+            meta={"query": args.query, "out": str(out)},
+        )
         return 0
     if args.cmd == "memory":
         root = Path(args.root).resolve()
@@ -497,8 +567,11 @@ def main(argv: list[str] | None = None) -> int:
         artifact_dir = _resolve_optional_path(args.artifact_dir)
         db = _prime_db_path(root, args.db, artifact_dir)
         out = _prime_out_path(root, args.query, args.out, artifact_dir)
+        trace_path = live_trace_path(root, artifact_dir)
         if args.readonly_root and (
-            _is_relative_to(db.resolve(), root) or _is_relative_to(out.resolve(), root)
+            _is_relative_to(db.resolve(), root)
+            or _is_relative_to(out.resolve(), root)
+            or _is_relative_to(trace_path.resolve(), root)
         ):
             print(
                 "Error: refusing to write artifacts inside read-only root. "
@@ -543,6 +616,31 @@ def main(argv: list[str] | None = None) -> int:
         if args.changed:
             print(f"Changed files: {len(changed_paths)}")
         print("Read this slice first, then open only the raw files it identifies.")
+        trace_node_id = _first_trace_node_id(slice_result)
+        trace_path_value = _path_from_node_id(trace_node_id) or _relative_trace_path(
+            Path(slice_result["out"]),
+            root,
+        )
+        _trace_event(
+            root,
+            artifact_dir=artifact_dir,
+            event="prime",
+            path=trace_path_value,
+            node_id=trace_node_id,
+            estimated_tokens=slice_tokens,
+            meta={
+                "query": args.query,
+                "slice_path": str(slice_result["out"]).replace("\\", "/"),
+                "manifest_path": str(slice_result["manifest"]).replace("\\", "/"),
+                "source_estimated_tokens": source_tokens,
+                "full_context_estimated_tokens": slice_result["full_context_estimated_tokens"],
+                "saving": saving,
+                "file_count": slice_result["file_count"],
+                "symbol_count": slice_result["symbol_count"],
+                "direct_edges": slice_result["direct_edges"],
+                "changed_files": len(changed_paths),
+            },
+        )
         return 0
     if args.cmd == "slice":
         out = Path(args.out) if args.out else default_slice_path(args.query)
@@ -559,6 +657,14 @@ def main(argv: list[str] | None = None) -> int:
             f"~{result['estimated_tokens']} tokens, "
             f"{result['estimated_token_ratio']:.2%} of full context). "
             f"Manifest: {result['manifest']}"
+        )
+        root = Path.cwd().resolve()
+        _trace_event(
+            root,
+            event="slice",
+            path=_relative_trace_path(Path(result["out"]), root),
+            estimated_tokens=result["estimated_tokens"],
+            meta={"query": args.query, "written_nodes": result["written_nodes"]},
         )
         return 0
     return 1
@@ -651,6 +757,45 @@ def _changed_paths(root: Path) -> list[str]:
     paths.update(_git_lines(root, ["diff", "--cached", "--name-only", "--relative"]))
     paths.update(_git_lines(root, ["ls-files", "--others", "--exclude-standard"]))
     return sorted(path.replace("\\", "/") for path in paths)
+
+
+def _relative_trace_path(path: Path, root: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(root)).replace("\\", "/")
+    except ValueError:
+        return str(path).replace("\\", "/")
+
+
+def _trace_event(root: Path, *, artifact_dir: Path | None = None, **fields: object) -> None:
+    append_live_trace_event(live_trace_path(root, artifact_dir), **fields)
+
+
+def _first_trace_node_id(slice_result: dict[str, object]) -> str | None:
+    for key in ("matched_node_ids", "node_ids"):
+        values = slice_result.get(key)
+        if not isinstance(values, list):
+            continue
+        for value in values:
+            if isinstance(value, str) and not value.startswith("module:"):
+                return value
+    return None
+
+
+def _path_from_node_id(node_id: str | None) -> str | None:
+    if not node_id:
+        return None
+    parts = node_id.split("::")
+    if len(parts) >= 2 and parts[0] in {
+        "class",
+        "doc",
+        "file",
+        "folder",
+        "function",
+        "heading",
+        "method",
+    }:
+        return parts[1].replace("\\", "/")
+    return None
 
 
 if __name__ == "__main__":

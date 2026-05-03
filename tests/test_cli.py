@@ -273,6 +273,13 @@ def test_read_map_mode_prints_file_metadata_without_source_body(tmp_path: Path):
     assert "- Path: `app.py`" in result.stdout
     assert "function::app.py::target" in result.stdout
     assert "body should stay hidden" not in result.stdout
+    trace_rows = [
+        json.loads(line)
+        for line in (tmp_path / ".codeprism" / "live-trace.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert trace_rows[-1]["event"] == "read_map"
+    assert trace_rows[-1]["path"] == "app.py"
+    assert trace_rows[-1]["estimated_tokens"] > 0
 
 
 def test_read_signatures_mode_prints_symbols_without_function_bodies(tmp_path: Path):
@@ -446,6 +453,38 @@ def test_gain_command_reports_savings_and_map_freshness(tmp_path: Path):
     assert "Changed files: 1" in stale_result.stdout
 
 
+def test_gain_command_appends_live_trace_freshness_metadata(tmp_path: Path):
+    app = tmp_path / "app.py"
+    app.write_text("def main():\n    return 1\n", encoding="utf-8")
+    map_result = subprocess.run(
+        [sys.executable, "-m", "contextopt.cli", "map", str(tmp_path)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert map_result.returncode == 0, map_result.stderr
+
+    result = subprocess.run(
+        [sys.executable, "-m", "contextopt.cli", "gain", str(tmp_path)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    trace_rows = [
+        json.loads(line)
+        for line in (tmp_path / ".codeprism" / "live-trace.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    gain_event = trace_rows[-1]
+    assert gain_event["event"] == "gain"
+    assert gain_event["meta"]["freshness_status"] == "current"
+    assert gain_event["meta"]["changed_files"] == 0
+    assert gain_event["meta"]["source_to_context_saved_percent"] >= 0
+
+
 def test_prime_command_maps_and_writes_slice_first_workflow(tmp_path: Path):
     (tmp_path / "app.py").write_text(
         "def billing_webhook():\n    return 'ok'\n",
@@ -594,6 +633,16 @@ def test_prime_artifact_dir_keeps_outputs_outside_readonly_root(tmp_path: Path):
     assert (artifacts / "context.db").exists()
     assert (artifacts / "slices" / "target-symbol.md").exists()
     assert (artifacts / "slices" / "target-symbol.json").exists()
+    trace = artifacts / "live-trace.jsonl"
+    assert trace.exists()
+    trace_rows = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines()]
+    assert trace_rows[-1]["event"] == "prime"
+    assert trace_rows[-1]["agent_id"] == "CodePrism"
+    assert trace_rows[-1]["path"] == "app.py"
+    assert trace_rows[-1]["node_id"] == "function::app.py::target_symbol"
+    assert trace_rows[-1]["estimated_tokens"] > 0
+    assert trace_rows[-1]["meta"]["query"] == "target symbol"
+    assert trace_rows[-1]["meta"]["slice_path"].endswith("target-symbol.md")
     assert not (project / ".codeprism").exists()
     assert not (project / ".contextopt").exists()
 
@@ -624,3 +673,34 @@ def test_prime_readonly_root_rejects_default_outputs_under_root(tmp_path: Path):
     assert "refusing to write artifacts inside read-only root" in result.stderr.lower()
     assert not (project / ".codeprism").exists()
     assert not (project / ".contextopt").exists()
+
+
+def test_visualize_auto_loads_live_trace_when_present(tmp_path: Path):
+    (tmp_path / "app.py").write_text("def main():\n    return 1\n", encoding="utf-8")
+    map_result = subprocess.run(
+        [sys.executable, "-m", "contextopt.cli", "map", str(tmp_path)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert map_result.returncode == 0, map_result.stderr
+    trace = tmp_path / ".codeprism" / "live-trace.jsonl"
+    trace.write_text(
+        '{"agent_id":"CodePrism","event":"prime","path":"app.py","estimated_tokens":20}\n',
+        encoding="utf-8",
+    )
+    outdir = tmp_path / ".codeprism" / "visual"
+
+    result = subprocess.run(
+        [sys.executable, "-m", "contextopt.cli", "visualize", "--outdir", str(outdir)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads((outdir / "activity-stream.json").read_text(encoding="utf-8"))
+    assert payload["summary"]["event_count"] == 1
+    assert payload["events"][0]["event"] == "prime"

@@ -3,6 +3,8 @@
 This schema is the MVP2 foundation for visual overlays and the MVP3 pixel-agent replay loop.
 The source log format is newline-delimited JSON (`.jsonl`). `codeprism visualize --activity <file>` normalizes valid rows into `.codeprism/visual/activity-stream.json` and records warnings for malformed rows.
 
+CodePrism also writes a lightweight local Live Trace at `.codeprism/live-trace.jsonl` for its own CLI commands. `codeprism visualize` auto-loads that file when it exists and no explicit `--activity` path is supplied. With `--artifact-dir`, commands write `live-trace.jsonl` under the artifact directory instead of the target repo. Set `CODEPRISM_TRACE=0` to disable this side effect.
+
 You can also normalize an activity stream without generating a viewer:
 
 ```bash
@@ -67,6 +69,11 @@ Only `event` is effectively required by the parser. Missing optional fields are 
 {"ts":"2026-05-03T02:02:00Z","run_id":"demo-1","agent_id":"CodePrism","event":"context_pack_generated","estimated_tokens":1400,"actual_tokens":1280,"meta":{"node_count":22,"edge_count":37}}
 ```
 
+### `prime`
+```json
+{"ts":"2026-05-04T01:00:00Z","run_id":"codeprism-cli","agent_id":"CodePrism","event":"prime","path":".codeprism/slices/current-task.md","estimated_tokens":9561,"status":"ok","severity":"info","meta":{"query":"current task","source_estimated_tokens":85557,"saving":0.8882}}
+```
+
 ### `test_run`
 ```json
 {"ts":"2026-05-03T02:03:00Z","run_id":"demo-1","agent_id":"codex","event":"test_run","path":"tests/test_app.py","meta":{"status":"passed"}}
@@ -88,7 +95,7 @@ The visualizer writes a normalized JSON payload:
 
 The standalone `codeprism activity normalize` command writes the same payload shape, which keeps adapters simple and avoids reading private agent session logs directly.
 
-Activity replay can be combined with context overlays by running `codeprism visualize --activity <activity.jsonl> --context <slice.json>`. Activity events show what was touched; context overlays show what was packed.
+Activity replay can be combined with context overlays by running `codeprism visualize --activity <activity.jsonl> --context <slice.json>`. Activity events show what was touched; context overlays show what was packed. If `--activity` is omitted, the viewer uses `.codeprism/live-trace.jsonl` when present.
 
 ## Future fields
 

@@ -314,6 +314,8 @@ def export_slice(
         "symbol_count": symbol_count,
         "direct_edges": len(selected_edges),
         "seeded_paths": normalized_seed_paths,
+        "node_ids": sorted(selected_ids),
+        "matched_node_ids": sorted(matched_ids),
         "estimated_tokens": estimated_tokens,
         "full_context_estimated_tokens": full_context_tokens,
         "estimated_token_ratio": ratio,

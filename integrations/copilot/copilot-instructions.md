@@ -21,3 +21,5 @@ codeprism prime "topic or symbol" --root PATH_TO_REPO --artifact-dir PATH_TO_ART
 ```
 
 Use the generated `.codeprism/slices/*.md` file as the first source for project structure, important files, and symbol locations. Run `codeprism gain` when you need the estimated savings/freshness report. For a specific mapped node, prefer `codeprism references NODE_ID` and `codeprism get NODE_ID`. For a whole file, prefer `codeprism read PATH --mode signatures` or `--mode diff` before opening the full source. Verify in raw files before changing code.
+
+CodePrism writes a local `.codeprism/live-trace.jsonl` event stream for its own commands. `codeprism visualize --outdir .codeprism/visual` auto-loads that trace when present, which is useful for inspecting the context workflow without reading private agent session logs.

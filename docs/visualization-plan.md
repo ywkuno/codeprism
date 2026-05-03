@@ -102,11 +102,15 @@ For richer visualization we should add:
 - keep generated/cache/dependency-heavy areas collapsed or hidden by default
 
 ### Phase E — MVP3 replay
+- write CodePrism command events to `.codeprism/live-trace.jsonl`
+- auto-load Live Trace from `codeprism visualize` when no explicit activity file is supplied
+- route Live Trace to `--artifact-dir` for read-only target repos
 - event list, timeline, speed control, and reset
 - lightweight marker movement with `requestAnimationFrame`
 - event highlighting by `node_id`, `from_node_id`, `to_node_id`, or `path`
 - one marker per `agent_id`
 - short activity trails between replayed source and target nodes
+- low-cost pulse markers and dashed beam effects that pause with replay state
 - replay HUD with aggregate event, agent, duration, and token estimates
 - searchable event list for jumping to matching agents, event types, and paths
 - run and agent filters
@@ -155,4 +159,5 @@ Build a real app under `apps/brain-viz`:
 - user can pan, zoom, drag, search, filter, highlight, and inspect nodes
 - viewer can show the current activity event and highlight a touched node by `node_id` or `path`
 - viewer can move a lightweight marker between `from_node_id` and `to_node_id`
+- viewer can replay `.codeprism/live-trace.jsonl` without needing private agent logs
 - viewer handles at least a few thousand nodes without falling over

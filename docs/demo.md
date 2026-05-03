@@ -17,7 +17,7 @@ codeprism init
 codeprism prime "main"
 ```
 
-This creates a local `.codeprism/context.db` SQLite graph and a focused `.codeprism/slices/main.md` file. Generated `.codeprism/` files are local working artifacts and should not be committed.
+This creates a local `.codeprism/context.db` SQLite graph and a focused `.codeprism/slices/main.md` file. It also appends a small command event to `.codeprism/live-trace.jsonl`, which the viewer can replay later without reading private agent session logs. Generated `.codeprism/` files are local working artifacts and should not be committed.
 
 During an edit session, seed the slice with changed, staged, and untracked Git files:
 
@@ -33,7 +33,7 @@ For a read-only checkout or a CI smoke run, keep artifacts outside the target re
 codeprism prime "current task" --root PATH_TO_REPO --artifact-dir PATH_TO_ARTIFACTS --readonly-root
 ```
 
-Replace `PATH_TO_REPO` and `PATH_TO_ARTIFACTS` with normal project and output paths for your machine. With `--readonly-root`, CodePrism refuses to write generated artifacts under `--root`.
+Replace `PATH_TO_REPO` and `PATH_TO_ARTIFACTS` with normal project and output paths for your machine. With `--readonly-root`, CodePrism refuses to write generated artifacts under `--root`. The Live Trace file follows the same routing: it is written as `PATH_TO_ARTIFACTS/live-trace.jsonl` when `--artifact-dir` is supplied.
 
 ## 3. Review Token Estimates
 
@@ -93,12 +93,20 @@ codeprism mcp --root .
 
 ## 5. Replay Activity
 
+Replay CodePrism's own local Live Trace:
+
+```bash
+codeprism visualize --outdir .codeprism/visual
+```
+
+Or normalize supplied safe activity rows:
+
 ```bash
 codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .codeprism/activity-events.jsonl
 codeprism activity normalize examples/activity-stream.sample.jsonl --out .codeprism/activity-stream.json
 ```
 
-The adapter is intentionally simple and safe. It converts explicit tool-event rows into CodePrism activity JSONL. It does not read private agent session logs.
+The adapter is intentionally simple and safe. It converts explicit tool-event rows into CodePrism activity JSONL. It does not read private agent session logs. To disable CodePrism's own trace writes, set `CODEPRISM_TRACE=0`.
 
 ## 6. Open The Optional Viewer
 
@@ -116,7 +124,7 @@ The viewer supports:
 - repo-tree and cluster-grid layouts
 - search, kind filter, role filter, and layer toggles
 - selected-node inspection with incoming/outgoing edges
-- activity replay with run/agent filters and touched-only mode
+- Live Trace replay with run/agent filters, touched-only mode, moving markers, and lightweight pulse trails
 - context overlays that highlight included slice nodes and show slice-vs-full token estimates
 
 ## Screenshot
