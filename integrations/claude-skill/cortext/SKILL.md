@@ -30,6 +30,7 @@ codeprism prime "topic, file, symbol, or bug" --root PATH_TO_REPO --artifact-dir
 ```
 
 2. Read the generated slice Markdown first. By default it is under `.codeprism/slices/`; with `--artifact-dir`, it is under that artifact directory.
+   CodePrism also writes a local Live Trace event to `.codeprism/live-trace.jsonl`, or to `<artifact-dir>/live-trace.jsonl` when `--artifact-dir` is used.
 3. Use exact retrieval for specific mapped nodes before opening whole raw files:
 
 ```bash
@@ -73,6 +74,8 @@ codeprism doctor
 codeprism visualize --context .codeprism/slices/<slice>.json
 ```
 
+When `.codeprism/live-trace.jsonl` exists, `codeprism visualize` auto-loads it for replay. Use this to inspect what CodePrism commands touched without reading private agent session logs.
+
 ## Rules
 
 - Prefer deterministic context pack facts over guesses.
@@ -84,3 +87,4 @@ codeprism visualize --context .codeprism/slices/<slice>.json
 - Treat token counts as estimates, not billing-grade measurements.
 - Prefer `--changed` when there are local edits, staged changes, or new files.
 - Use `--artifact-dir` and `--readonly-root` when the target repository must stay untouched.
+- Treat Live Trace as a local audit aid, not as proof of exact model billing tokens.

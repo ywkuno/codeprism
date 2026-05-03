@@ -33,6 +33,7 @@ def test_visualization_export(tmp_path: Path) -> None:
     assert "repo-tree" in html_text
     assert "cluster-grid" in html_text
     assert "tooltip" in html_text
+    assert "Live Trace" in html_text
     assert "activityNow" in html_text
     assert "activitySummary" in html_text
     assert "activityTrailLayer" in html_text
@@ -59,6 +60,9 @@ def test_visualization_export(tmp_path: Path) -> None:
     assert "function eventLabel" in js_text
     assert "function eventMatchesQuery" in js_text
     assert "state.activity.query" in js_text
+    assert "state.activity.source" in js_text
+    assert "attributeName', 'r'" in js_text
+    assert "traceDash" in css_text
     assert "activityRunFilter" in html_text
     assert "activityAgentFilter" in html_text
     assert "jumpEventBtn" in html_text

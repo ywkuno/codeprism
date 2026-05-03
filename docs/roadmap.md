@@ -69,6 +69,10 @@ Context saving is the main product direction. Visuals are the inspection and gam
 
 ## MVP3 — Animated Pixel Brain / Agent Replay
 
+- Lightweight `.codeprism/live-trace.jsonl` for CodePrism command events
+- `codeprism visualize` auto-loads the local Live Trace when no `--activity` file is supplied
+- `--artifact-dir` routes Live Trace outside read-only target repos
+- Low-cost cyber pulse marker and dashed activity beams in the static viewer
 - Richer JSONL activity stream with optional estimated and actual token counts
 - Event replay timeline, event list, speed control, next, and reset
 - Moving agent markers over known graph nodes

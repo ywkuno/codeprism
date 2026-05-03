@@ -30,9 +30,9 @@ codeprism references "heading::README.md::Quick Start"
 codeprism prime main
 codeprism prime "current task" --changed
 codeprism prime "current task" --root PATH_TO_REPO --artifact-dir PATH_TO_ARTIFACTS --readonly-root
+codeprism visualize --outdir .codeprism/visual
 codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .codeprism/activity-events.jsonl
 codeprism activity normalize examples/activity-stream.sample.jsonl --out .codeprism/activity-stream.json
-codeprism visualize --outdir .codeprism/visual
 codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .codeprism/visual
 codeprism stats
 codeprism gain
@@ -68,6 +68,8 @@ Then inspect generated files under `.codeprism/`.
 - JSON nodes use stable IDs that survive repeated map runs when paths and symbol names are unchanged.
 - Hierarchy edges model folders containing files/docs, files/docs containing symbols/headings/routes, and classes containing methods.
 - `codeprism visualize --outdir .codeprism/visual` writes a static browser viewer.
+- CodePrism writes local command events to `.codeprism/live-trace.jsonl`; `codeprism visualize` auto-loads that trace when no explicit `--activity` file is supplied.
+- `codeprism prime ... --artifact-dir <dir> --readonly-root` writes Live Trace to `<dir>/live-trace.jsonl` so read-only target repos stay clean.
 - `codeprism visualize --activity ...` normalizes valid JSONL activity rows into `activity-stream.json`; malformed rows become warnings.
 - `codeprism activity normalize ...` writes the same normalized payload without generating a viewer.
 - `codeprism activity adapt-tool-log ...` converts simple safe tool-event JSONL into CodePrism activity JSONL.
@@ -75,6 +77,7 @@ Then inspect generated files under `.codeprism/`.
 - MVP2.6 makes multi-column repo tree the default layout and keeps cluster grid as an alternate view.
 - MVP2.7 adds semantic `meta.role` classification plus role filter, role legend, role colors, and role badges in the viewer.
 - MVP3 replay supports `from_node_id`, `to_node_id`, `duration_ms`, estimated/actual token fields, timeline controls, speed control, one marker per agent, activity trails, searchable event list, run/agent filters, jump-to-node, touched-only mode, and current-event HUD text.
+- The static viewer labels this panel Live Trace and uses lightweight SVG/CSS pulse trails, not a heavy canvas loop.
 - MVP4 token workflow starts with `codeprism stats`, `codeprism gain`, `codeprism query`, and `codeprism slice`.
 - `codeprism prime <task>` maps, estimates, and writes a focused slice in one step.
 - `codeprism prime <task> --changed` seeds the slice with changed, staged, and untracked Git files.

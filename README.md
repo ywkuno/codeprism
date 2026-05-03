@@ -53,6 +53,7 @@ Agents waste context when they brute-read file trees, repeated shell output, gen
 - Exports Markdown, JSON, DOT, and static browser visualizations.
 - Generates stable graph data for tool integration and optional visual inspection.
 - Replays JSONL activity streams over the graph with agent markers, trails, timeline controls, and token estimates.
+- Writes a lightweight local Live Trace at `.codeprism/live-trace.jsonl` so the viewer can replay CodePrism commands without reading private agent logs.
 
 ## Status
 
@@ -96,7 +97,7 @@ codeprism prime "main"
 codeprism visualize --context .codeprism/slices/main.json --outdir .codeprism/visual
 ```
 
-Read the generated `.codeprism/slices/main.md` before opening broad raw file trees. Open `.codeprism/visual/index.html` in a browser when you want the optional graph view.
+Read the generated `.codeprism/slices/main.md` before opening broad raw file trees. `codeprism prime` also appends a safe local event to `.codeprism/live-trace.jsonl`; `codeprism visualize` auto-loads that trace when no explicit `--activity` file is supplied. Open `.codeprism/visual/index.html` in a browser when you want the optional graph view.
 See [docs/demo.md](docs/demo.md) for the full activity replay and context-overlay walkthrough.
 
 For read-only checkouts or CI jobs, route generated artifacts outside the repository:
@@ -118,9 +119,18 @@ codeprism doctor
 
 This copies project helpers into `.claude/commands/` and `.github/copilot-instructions.md`, and installs the CodePrism skill into local Codex and Claude skill folders. `codeprism doctor` reports whether those files are installed and current. Restart Codex/Claude after installing global skills.
 
-## Activity Replay
+## Live Trace And Activity Replay
 
-CodePrism can normalize a JSONL event stream and replay touched nodes in the viewer:
+CodePrism records its own command-level events in `.codeprism/live-trace.jsonl`. The trace is local JSONL, uses the same public activity schema, and contains only explicit command metadata such as event type, touched path or node ID, estimated tokens, and slice statistics. Set `CODEPRISM_TRACE=0` to disable writing it.
+
+Generate a viewer from the current local trace:
+
+```bash
+codeprism prime "current task" --changed
+codeprism visualize --outdir .codeprism/visual
+```
+
+CodePrism can also normalize a supplied JSONL event stream and replay touched nodes in the viewer:
 
 ```bash
 codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .codeprism/activity-events.jsonl
@@ -144,13 +154,13 @@ The viewer activity panel includes local event search, run/agent filters, jump-t
 | `codeprism prime "topic"` | Map the repo, write a focused slice, and print a savings report. |
 | `codeprism prime "topic" --changed` | Seed the slice with changed, staged, and untracked Git files. |
 | `codeprism prime "topic" --artifact-dir <dir> --readonly-root` | Write prime artifacts outside the target repo and refuse root writes. |
+| `codeprism visualize --outdir <dir>` | Generate a static browser viewer and auto-load `.codeprism/live-trace.jsonl` when present. |
 | `codeprism get <node-id>` | Print exact source for a mapped file, doc, or symbol node. |
 | `codeprism references <node-id>` | Show incoming and outgoing graph references for a node. |
 | `codeprism read <path> --mode map` | Print mapped nodes for a file without source bodies. |
 | `codeprism read <path> --mode signatures` | Print mapped symbols/headings/routes without source bodies. |
 | `codeprism read <path> --mode diff` | Print only the working-tree diff for one path. |
 | `codeprism read <path> --mode full` | Explicitly print the full file. |
-| `codeprism visualize` | Generate a static browser viewer. |
 | `codeprism activity adapt-tool-log` | Convert simple safe tool-event JSONL into CodePrism activity JSONL. |
 | `codeprism activity normalize` | Normalize safe JSONL activity events into replay JSON. |
 | `codeprism query "topic"` | Rank relevant files and symbols. |
