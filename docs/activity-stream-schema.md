@@ -9,6 +9,14 @@ You can also normalize an activity stream without generating a viewer:
 contextopt activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
 ```
 
+For simple tool-event logs, Cortext includes a conservative adapter example:
+
+```bash
+contextopt activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
+```
+
+The adapter accepts safe fields such as `agent`, `type`, `file`, `tokens`, and `duration_ms`, then emits Cortext activity JSONL. It does not read private session logs or infer hidden context.
+
 ## Base fields
 
 Recommended event fields:

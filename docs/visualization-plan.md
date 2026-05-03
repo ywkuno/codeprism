@@ -109,6 +109,9 @@ For richer visualization we should add:
 - short activity trails between replayed source and target nodes
 - replay HUD with aggregate event, agent, duration, and token estimates
 - searchable event list for jumping to matching agents, event types, and paths
+- run and agent filters
+- jump-to-node from the active event
+- touched-only map mode for replay debugging
 - no animation work when paused
 
 ### Phase F — MVP4 token loop

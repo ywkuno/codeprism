@@ -58,6 +58,14 @@ def test_visualization_export(tmp_path: Path) -> None:
     assert "function eventLabel" in js_text
     assert "function eventMatchesQuery" in js_text
     assert "state.activity.query" in js_text
+    assert "activityRunFilter" in html_text
+    assert "activityAgentFilter" in html_text
+    assert "jumpEventBtn" in html_text
+    assert "touchedOnlyBtn" in html_text
+    assert "function populateActivityFilters" in js_text
+    assert "function jumpToActivityNode" in js_text
+    assert "function setTouchedOnly" in js_text
+    assert "state.activityNodeIds" in js_text
     assert "function showTooltip" in js_text
 
 

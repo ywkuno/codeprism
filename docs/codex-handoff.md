@@ -20,6 +20,7 @@ contextopt init
 contextopt map .
 contextopt export --format md --out .contextopt/context-pack.md
 contextopt export --format json --out .contextopt/context-pack.json
+contextopt activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
 contextopt activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
 contextopt visualize --outdir .contextopt/visual
 contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
@@ -49,10 +50,11 @@ Then inspect generated files under `.contextopt/`.
 - `contextopt visualize --outdir .contextopt/visual` writes a static browser viewer.
 - `contextopt visualize --activity ...` normalizes valid JSONL activity rows into `activity-stream.json`; malformed rows become warnings.
 - `contextopt activity normalize ...` writes the same normalized payload without generating a viewer.
+- `contextopt activity adapt-tool-log ...` converts simple safe tool-event JSONL into Cortext activity JSONL.
 - MVP2.5 clarity controls are in place: clean overview, layer toggles, focus mode, hover tooltips, label-density rules, and real fit-to-visible-map.
 - MVP2.6 makes multi-column repo tree the default layout and keeps cluster grid as an alternate view.
 - MVP2.7 adds semantic `meta.role` classification plus role filter, role legend, role colors, and role badges in the viewer.
-- MVP3 replay supports `from_node_id`, `to_node_id`, `duration_ms`, estimated/actual token fields, timeline controls, speed control, one marker per agent, activity trails, searchable event list, and current-event HUD text.
+- MVP3 replay supports `from_node_id`, `to_node_id`, `duration_ms`, estimated/actual token fields, timeline controls, speed control, one marker per agent, activity trails, searchable event list, run/agent filters, jump-to-node, touched-only mode, and current-event HUD text.
 - MVP4 token workflow starts with `contextopt stats`, `contextopt query`, and `contextopt slice`.
 - `docs/visualization-plan.md` tracks the browser map plan.
 - `docs/pixel-brain-mode.md` and `docs/activity-stream-schema.md` cover the future activity replay layer.

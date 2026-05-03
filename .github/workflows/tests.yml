@@ -31,6 +31,7 @@ jobs:
           contextopt map .
           contextopt export --format md --out .contextopt/context-pack.md
           contextopt export --format json --out .contextopt/context-pack.json
+          contextopt activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
           contextopt activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
           contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
           contextopt stats

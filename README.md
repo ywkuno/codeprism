@@ -46,6 +46,7 @@ contextopt init
 contextopt map .
 contextopt export --format md --out .contextopt/context-pack.md
 contextopt export --format json --out .contextopt/context-pack.json
+contextopt activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
 contextopt activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
 contextopt visualize --outdir .contextopt/visual
 contextopt stats
@@ -60,13 +61,14 @@ Open `.contextopt/visual/index.html` in a browser to inspect the generated brain
 Cortext can normalize a JSONL event stream and replay touched nodes in the viewer:
 
 ```bash
+contextopt activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
 contextopt activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
 contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
 ```
 
 Activity rows can reference `node_id`, `from_node_id`, `to_node_id`, or `path`. Malformed rows are skipped and reported as warnings in the generated activity file.
 Optional `estimated_tokens` and `actual_tokens` fields power the replay HUD without requiring Cortext to read private agent session logs.
-The viewer activity panel includes a local event search box for jumping to matching agents, event types, and paths.
+The viewer activity panel includes local event search, run/agent filters, jump-to-node, and a touched-only map mode.
 
 ## CLI Commands
 
@@ -78,6 +80,7 @@ The viewer activity panel includes a local event search box for jumping to match
 | `contextopt export --format json` | Export stable graph JSON. |
 | `contextopt export --format dot` | Export DOT graph data. |
 | `contextopt visualize` | Generate a static browser viewer. |
+| `contextopt activity adapt-tool-log` | Convert simple safe tool-event JSONL into Cortext activity JSONL. |
 | `contextopt activity normalize` | Normalize safe JSONL activity events into replay JSON. |
 | `contextopt query "topic"` | Rank relevant files and symbols. |
 | `contextopt stats` | Estimate source, graph, and pack token sizes. |

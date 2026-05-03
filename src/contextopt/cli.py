@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 
 from .activity import write_activity_payload
+from .activity_adapters import adapt_tool_jsonl
 from .config import load_config
 from .exporters.dot import export_dot
 from .exporters.json_export import export_json
@@ -62,6 +63,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_activity_normalize.add_argument("input")
     p_activity_normalize.add_argument("--out", default=".contextopt/activity-stream.json")
+    p_activity_adapt_tool = activity_sub.add_parser(
+        "adapt-tool-log",
+        help="Convert a simple tool-event JSONL log into Cortext activity JSONL.",
+    )
+    p_activity_adapt_tool.add_argument("input")
+    p_activity_adapt_tool.add_argument("--out", default=".contextopt/activity-events.jsonl")
     args = parser.parse_args(argv)
     if args.cmd == "init":
         root = Path(args.root).resolve()
@@ -135,6 +142,14 @@ def main(argv: list[str] | None = None) -> int:
                 f"Wrote {out} "
                 f"({summary['event_count']} events, {len(payload['warnings'])} warnings, "
                 f"~{summary['estimated_tokens']} estimated tokens)."
+            )
+            return 0
+        if args.activity_cmd == "adapt-tool-log":
+            out = Path(args.out)
+            result = adapt_tool_jsonl(Path(args.input), out)
+            print(
+                f"Wrote {out} "
+                f"({result['event_count']} events, {result['warning_count']} warnings)."
             )
             return 0
     if args.cmd == "query":

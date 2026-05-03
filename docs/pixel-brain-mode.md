@@ -85,6 +85,8 @@ Build a simple browser prototype:
 - show a replay summary HUD with event count, agent count, and estimated tokens
 - keep one lightweight marker per agent and draw short-lived trails between touched nodes
 - filter the event list locally by agent, event type, path, or node ID
+- jump from the current event to the touched graph node
+- show only replay-touched nodes when debugging a run
 
 ### Product renderer
 Create a proper game-ish renderer in `apps/pixel-brain`.

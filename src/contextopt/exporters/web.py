@@ -73,6 +73,18 @@ HTML = """<!doctype html>
       <div id="activityNow" class="activity-now">Ready.</div>
       <label for="activitySearch">Find event</label>
       <input id="activitySearch" placeholder="event, agent, path..." />
+      <label for="activityRunFilter">Run</label>
+      <select id="activityRunFilter">
+        <option value="all">All</option>
+      </select>
+      <label for="activityAgentFilter">Agent</label>
+      <select id="activityAgentFilter">
+        <option value="all">All</option>
+      </select>
+      <div class="button-row">
+        <button id="jumpEventBtn" type="button">Jump to node</button>
+        <button id="touchedOnlyBtn" type="button">Touched only</button>
+      </div>
       <ol id="eventList" class="event-list"></ol>
       <pre id="activityDetails">No activity stream loaded.</pre>
     </section>
@@ -193,6 +205,7 @@ input, select, button {
 .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 button { cursor: pointer; }
 button:hover { border-color: var(--accent); }
+button.active { border-color: var(--accent); background: rgba(73,214,163,0.16); }
 input[type="range"] { accent-color: var(--accent); padding: 0; }
 .muted { color: var(--muted); }
 pre {
@@ -376,7 +389,19 @@ const state = {
     activity: true,
     labels: true,
   },
-  activity: { events: [], warnings: [], summary: null, index: -1, timer: null, speed: 1, query: '' },
+  activity: {
+    events: [],
+    warnings: [],
+    summary: null,
+    index: -1,
+    timer: null,
+    speed: 1,
+    query: '',
+    run: 'all',
+    agent: 'all',
+  },
+  activityNodeIds: new Set(),
+  touchedOnly: false,
   marker: { x: 0, y: 0, visible: false, animation: null },
   agentMarkers: new Map(),
   activityTrails: [],
@@ -399,6 +424,8 @@ const activitySummary = document.getElementById('activitySummary');
 const activityNow = document.getElementById('activityNow');
 const activityDetails = document.getElementById('activityDetails');
 const activitySearch = document.getElementById('activitySearch');
+const activityRunFilter = document.getElementById('activityRunFilter');
+const activityAgentFilter = document.getElementById('activityAgentFilter');
 const timelineInput = document.getElementById('timeline');
 const speedSelect = document.getElementById('speed');
 const eventList = document.getElementById('eventList');
@@ -466,6 +493,18 @@ speedSelect.addEventListener('change', () => {
 activitySearch.addEventListener('input', () => {
   state.activity.query = activitySearch.value;
   renderEventList();
+});
+activityRunFilter.addEventListener('change', () => {
+  state.activity.run = activityRunFilter.value;
+  renderEventList();
+});
+activityAgentFilter.addEventListener('change', () => {
+  state.activity.agent = activityAgentFilter.value;
+  renderEventList();
+});
+document.getElementById('jumpEventBtn').addEventListener('click', jumpToActivityNode);
+document.getElementById('touchedOnlyBtn').addEventListener('click', () => {
+  setTouchedOnly(!state.touchedOnly);
 });
 searchInput.addEventListener('input', applyFilters);
 kindFilter.addEventListener('change', applyFilters);
@@ -873,6 +912,14 @@ function fitView() {
   renderTransform();
 }
 
+function centerNodeInView(node) {
+  const viewWidth = 1600;
+  const viewHeight = 1000;
+  state.tx = viewWidth / 2 - node.x * state.scale;
+  state.ty = viewHeight / 2 - node.y * state.scale;
+  renderTransform();
+}
+
 function applyFilters() {
   hideTooltip();
   const text = searchInput.value.trim().toLowerCase();
@@ -918,6 +965,10 @@ function edgeLayerVisible(edge) {
 function nodeVisibleForCurrentView(node, neighborIds = neighborsFor(state.selectedId)) {
   const active = state.layers.activity && node.id === state.activeEventNodeId;
   const focusRelated = state.focusMode && state.selectedId && (node.id === state.selectedId || neighborIds.has(node.id));
+  const touchedRelated = state.touchedOnly && state.activityNodeIds.has(node.id);
+  if (state.touchedOnly && !touchedRelated && !active && !focusRelated && node.id !== state.selectedId) {
+    return false;
+  }
   if (!node.matchesFilter && !active) return false;
   if (!nodeLayerVisible(node) && !active && !focusRelated) return false;
   if (state.focusMode && state.selectedId && node.id !== state.selectedId && !neighborIds.has(node.id) && !active) {
@@ -1210,6 +1261,48 @@ function renderActivityTrails() {
   }
 }
 
+function populateActivityFilters() {
+  const runs = [...new Set(state.activity.events.map((event) => event.run_id).filter(Boolean))].sort();
+  const agents = [...new Set(state.activity.events.map(activityAgentId))].sort();
+  activityRunFilter.innerHTML = '<option value="all">All</option>' + runs.map((run) => `<option value="${escapeHtml(run)}">${escapeHtml(run)}</option>`).join('');
+  activityAgentFilter.innerHTML = '<option value="all">All</option>' + agents.map((agent) => `<option value="${escapeHtml(agent)}">${escapeHtml(agent)}</option>`).join('');
+  state.activity.run = runs.includes(state.activity.run) ? state.activity.run : 'all';
+  state.activity.agent = agents.includes(state.activity.agent) ? state.activity.agent : 'all';
+  activityRunFilter.value = state.activity.run;
+  activityAgentFilter.value = state.activity.agent;
+}
+
+function updateActivityNodeIds() {
+  state.activityNodeIds = new Set();
+  for (const event of state.activity.events) {
+    const target = eventNodeId(event);
+    if (target) state.activityNodeIds.add(target);
+    if (event.from_node_id && state.nodeById.has(event.from_node_id)) {
+      state.activityNodeIds.add(event.from_node_id);
+    }
+  }
+}
+
+function setTouchedOnly(enabled) {
+  state.touchedOnly = Boolean(enabled);
+  const button = document.getElementById('touchedOnlyBtn');
+  button.textContent = state.touchedOnly ? 'Show all nodes' : 'Touched only';
+  button.classList.toggle('active', state.touchedOnly);
+  applyFilters();
+  fitView();
+}
+
+function jumpToActivityNode() {
+  const event = state.activity.events[state.activity.index] || null;
+  const nodeId = eventNodeId(event);
+  if (!nodeId) return;
+  state.activeEventNodeId = nodeId;
+  const node = state.nodeById.get(nodeId);
+  applyFilters();
+  selectNode(nodeId);
+  if (node) centerNodeInView(node);
+}
+
 function animateActivityMarker(fromId, toId, durationMs) {
   if (state.marker.animation) window.cancelAnimationFrame(state.marker.animation);
   const target = state.nodeById.get(toId);
@@ -1275,6 +1368,8 @@ function eventLabel(event, index) {
 }
 
 function eventMatchesQuery(event, query) {
+  if (state.activity.run !== 'all' && event.run_id !== state.activity.run) return false;
+  if (state.activity.agent !== 'all' && activityAgentId(event) !== state.activity.agent) return false;
   const normalized = (query || '').trim().toLowerCase();
   if (!normalized) return true;
   const haystack = [
@@ -1385,6 +1480,8 @@ function loadActivity(payload) {
   state.activity.warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
   state.activity.summary = payload.summary || null;
   state.activity.index = -1;
+  updateActivityNodeIds();
+  populateActivityFilters();
   timelineInput.max = Math.max(0, payload.events.length - 1);
   timelineInput.value = 0;
   renderEventList();

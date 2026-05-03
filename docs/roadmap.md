@@ -75,6 +75,8 @@
 - Replay HUD with event count, agent count, active event, and estimated tokens
 - Standalone `contextopt activity normalize` command for safe JSONL-to-replay payloads
 - Searchable event list for jumping to agents, event types, and paths
+- Safe tool-event adapter example via `contextopt activity adapt-tool-log`
+- Run and agent filters, jump-to-node, and touched-only replay map mode
 - Context inclusion overlays
 - Pixel renderer scaffold in `apps/pixel-brain`
 
