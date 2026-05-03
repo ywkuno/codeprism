@@ -1,6 +1,6 @@
-# Codex Prompt: Build Context Optimizer
+# Codex Prompt: Build Cortext
 
-You are working on Context Optimizer, a local-first repo mapping tool for AI assistants.
+You are working on Cortext, a local-first repo mapping tool for AI assistants.
 
 Start by running tests and CLI smoke commands. Then implement the next roadmap item from `docs/roadmap.md`.
 

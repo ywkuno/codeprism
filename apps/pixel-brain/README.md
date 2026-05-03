@@ -1,10 +1,10 @@
-# pixel-brain (future app)
+# pixel-brain (future Cortext app)
 
 This folder is reserved for a future pixel / gamified renderer for agent activity.
 
 Input artifacts:
 - `graph-data.json`
-- `activity-stream.jsonl`
+- normalized `activity-stream.json`
 
 Potential stacks:
 - Phaser

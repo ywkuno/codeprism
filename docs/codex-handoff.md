@@ -1,6 +1,13 @@
 # Codex Handoff
 
-You are continuing Context Optimizer.
+You are continuing Cortext.
+
+## Product line
+
+- MVP1 = mapper and context export.
+- MVP2 = visual brain map.
+- MVP3 = animated pixel brain / agent replay.
+- MVP4 = token optimization and targeted context slices.
 
 ## First task
 
@@ -14,6 +21,9 @@ contextopt map .
 contextopt export --format md --out .contextopt/context-pack.md
 contextopt export --format json --out .contextopt/context-pack.json
 contextopt visualize --outdir .contextopt/visual
+contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
+contextopt stats
+contextopt slice main --out .contextopt/slices/main.md
 ```
 
 Then inspect generated files under `.contextopt/`.
@@ -33,7 +43,15 @@ Then inspect generated files under `.contextopt/`.
 ## Current visualization work
 
 - `contextopt export --format json` writes the graph as inspectable JSON.
+- JSON nodes use stable IDs that survive repeated map runs when paths and symbol names are unchanged.
+- Hierarchy edges model folders containing files/docs, files/docs containing symbols/headings/routes, and classes containing methods.
 - `contextopt visualize --outdir .contextopt/visual` writes a static browser viewer.
+- `contextopt visualize --activity ...` normalizes valid JSONL activity rows into `activity-stream.json`; malformed rows become warnings.
+- MVP2.5 clarity controls are in place: clean overview, layer toggles, focus mode, hover tooltips, label-density rules, and real fit-to-visible-map.
+- MVP2.6 makes multi-column repo tree the default layout and keeps cluster grid as an alternate view.
+- MVP2.7 adds semantic `meta.role` classification plus role filter, role legend, role colors, and role badges in the viewer.
+- MVP3 replay supports `from_node_id`, `to_node_id`, `duration_ms`, timeline controls, speed control, and a moving marker.
+- MVP4 token workflow starts with `contextopt stats`, `contextopt query`, and `contextopt slice`.
 - `docs/visualization-plan.md` tracks the browser map plan.
 - `docs/pixel-brain-mode.md` and `docs/activity-stream-schema.md` cover the future activity replay layer.
 - `examples/activity-stream.sample.jsonl` is the sample event stream.

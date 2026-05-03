@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions
 
-This project uses Context Optimizer.
+This project uses Cortext.
 
 Before broad exploration, check `.contextopt/context-pack.md`. If it is absent or stale, suggest running:
 

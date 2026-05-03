@@ -11,6 +11,8 @@ from .exporters.web import export_web_visualization
 from .graph import GraphStore
 from .mapper import map_project
 from .query import query_graph
+from .slicer import default_slice_path, export_slice
+from .stats import compute_stats, format_stats
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -28,7 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     p_export = sub.add_parser("export", help="Export a context pack.")
     p_export.add_argument("--db", default=".contextopt/context.db")
     p_export.add_argument("--format", choices=["md", "json", "dot"], default="md")
-    p_export.add_argument("--out", default=".contextopt/context-pack.md")
+    p_export.add_argument("--out")
     p_export.add_argument("--max-nodes", type=int, default=5000)
     p_export.add_argument("--max-edges", type=int, default=5000)
     p_export.add_argument("--max-chars", type=int)
@@ -36,12 +38,21 @@ def main(argv: list[str] | None = None) -> int:
     p_query.add_argument("text")
     p_query.add_argument("--db", default=".contextopt/context.db")
     p_query.add_argument("--limit", type=int, default=20)
+    p_stats = sub.add_parser("stats", help="Show local token and graph statistics.")
+    p_stats.add_argument("root", nargs="?", default=".")
+    p_stats.add_argument("--db", default=".contextopt/context.db")
+    p_slice = sub.add_parser("slice", help="Export a targeted context slice.")
+    p_slice.add_argument("query")
+    p_slice.add_argument("--db", default=".contextopt/context.db")
+    p_slice.add_argument("--out")
+    p_slice.add_argument("--limit", type=int, default=12)
     p_visualize = sub.add_parser(
         "visualize",
         help="Generate an interactive browser view of the project map.",
     )
     p_visualize.add_argument("--db", default=".contextopt/context.db")
     p_visualize.add_argument("--outdir", default=".contextopt/visual")
+    p_visualize.add_argument("--activity")
     args = parser.parse_args(argv)
     if args.cmd == "init":
         root = Path(args.root).resolve()
@@ -74,7 +85,12 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     if args.cmd == "export":
-        out = Path(args.out)
+        default_out = {
+            "md": ".contextopt/context-pack.md",
+            "json": ".contextopt/context-pack.json",
+            "dot": ".contextopt/imports.dot",
+        }[args.format]
+        out = Path(args.out or default_out)
         out.parent.mkdir(parents=True, exist_ok=True)
         store = GraphStore(Path(args.db))
         if args.format == "dot":
@@ -93,12 +109,30 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.cmd == "visualize":
         outdir = Path(args.outdir)
-        html_path = export_web_visualization(GraphStore(Path(args.db)), outdir)
+        activity_path = Path(args.activity) if args.activity else None
+        html_path = export_web_visualization(
+            GraphStore(Path(args.db)),
+            outdir,
+            activity_path=activity_path,
+        )
         print(f"Wrote visualization to {html_path}")
         return 0
     if args.cmd == "query":
         for row in query_graph(GraphStore(Path(args.db)), args.text, args.limit):
             print(f"{row['kind']:10} {row['path']} {row['name']}")
+        return 0
+    if args.cmd == "stats":
+        stats = compute_stats(Path(args.root), GraphStore(Path(args.db)))
+        print(format_stats(stats))
+        return 0
+    if args.cmd == "slice":
+        out = Path(args.out) if args.out else default_slice_path(args.query)
+        result = export_slice(GraphStore(Path(args.db)), args.query, out, limit=args.limit)
+        print(
+            f"Wrote {result['out']} "
+            f"({result['written_nodes']} nodes, {result['direct_edges']} edges, "
+            f"~{result['estimated_tokens']} tokens)."
+        )
         return 0
     return 1
 

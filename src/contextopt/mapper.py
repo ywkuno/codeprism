@@ -11,7 +11,10 @@ from .extractors.js_ts import extract_js_ts
 from .extractors.markdown import extract_markdown
 from .extractors.python import extract_python
 from .graph import GraphStore
+from .ids import stable_node_id
 from .scanner import ScannedFile, scan_files
+
+EXTRACTION_CACHE_VERSION = "mvp2-v1"
 
 
 @dataclass
@@ -110,6 +113,103 @@ def _write_rows(
     return len(nodes), len(edges)
 
 
+def _file_like_node(nodes: list[dict[str, object]], rel_path: str) -> dict[str, object] | None:
+    for node in nodes:
+        if node["path"] == rel_path and node["kind"] in {"file", "doc"}:
+            return node
+    return None
+
+
+def _hierarchy_for_file(
+    rel_path: str,
+    nodes: list[dict[str, object]],
+    seen_folders: set[str],
+    seen_edges: set[tuple[str, str, str]],
+) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    extra_nodes: list[dict[str, object]] = []
+    extra_edges: list[dict[str, object]] = []
+    parts = rel_path.split("/")
+    folder_paths = ["/".join(parts[:index]) for index in range(1, len(parts))]
+
+    for folder_path in folder_paths:
+        if folder_path not in seen_folders:
+            seen_folders.add(folder_path)
+            extra_nodes.append(
+                {
+                    "kind": "folder",
+                    "path": folder_path,
+                    "name": folder_path.split("/")[-1],
+                    "start_line": None,
+                    "end_line": None,
+                    "meta_json": "{}",
+                }
+            )
+
+    for parent, child in zip(folder_paths, folder_paths[1:]):
+        edge = (
+            stable_node_id("folder", parent, parent.split("/")[-1]),
+            stable_node_id("folder", child, child.split("/")[-1]),
+            "contains",
+        )
+        if edge not in seen_edges:
+            seen_edges.add(edge)
+            extra_edges.append(
+                {"source": edge[0], "target": edge[1], "kind": edge[2], "meta_json": "{}"}
+            )
+
+    file_node = _file_like_node(nodes, rel_path)
+    if file_node and folder_paths:
+        parent_folder = folder_paths[-1]
+        edge = (
+            stable_node_id("folder", parent_folder, parent_folder.split("/")[-1]),
+            stable_node_id(str(file_node["kind"]), str(file_node["path"]), str(file_node["name"])),
+            "contains",
+        )
+        if edge not in seen_edges:
+            seen_edges.add(edge)
+            extra_edges.append(
+                {"source": edge[0], "target": edge[1], "kind": edge[2], "meta_json": "{}"}
+            )
+
+    if file_node:
+        file_id = stable_node_id(str(file_node["kind"]), str(file_node["path"]), str(file_node["name"]))
+        class_ids = {
+            str(node["name"]): stable_node_id(str(node["kind"]), str(node["path"]), str(node["name"]))
+            for node in nodes
+            if node["kind"] == "class"
+        }
+        for node in nodes:
+            if node is file_node or node["kind"] in {"file", "doc", "parse_error"}:
+                continue
+            node_id = stable_node_id(str(node["kind"]), str(node["path"]), str(node["name"]))
+            edge = (file_id, node_id, "contains")
+            if edge not in seen_edges:
+                seen_edges.add(edge)
+                extra_edges.append(
+                    {"source": edge[0], "target": edge[1], "kind": edge[2], "meta_json": "{}"}
+                )
+            if node["kind"] == "method":
+                try:
+                    meta = json.loads(str(node["meta_json"] or "{}"))
+                except json.JSONDecodeError:
+                    meta = {}
+                parent_class = meta.get("parent_class")
+                if isinstance(parent_class, str) and parent_class in class_ids:
+                    edge = (class_ids[parent_class], node_id, "contains")
+                    if edge not in seen_edges:
+                        seen_edges.add(edge)
+                        extra_edges.append(
+                            {
+                                "source": edge[0],
+                                "target": edge[1],
+                                "kind": edge[2],
+                                "meta_json": "{}",
+                            }
+                        )
+
+    return extra_nodes, extra_edges
+
+
 def map_project(
     root: Path,
     store: GraphStore,
@@ -124,13 +224,16 @@ def map_project(
     store.delete_files_not_in({file.rel_path for file in files})
     run_id = store.create_run(str(root), created_at)
     node_count = edge_count = files_hashed = files_reused = files_extracted = 0
+    seen_folders: set[str] = set()
+    seen_hierarchy_edges: set[tuple[str, str, str]] = set()
 
     for scanned in files:
         sha256, hashed = _file_hash(scanned, store)
         if hashed:
             files_hashed += 1
-        cached_nodes = store.cached_nodes(scanned.rel_path, sha256)
-        cached_edges = store.cached_edges(scanned.rel_path, sha256)
+        cache_key = f"{sha256}:{EXTRACTION_CACHE_VERSION}"
+        cached_nodes = store.cached_nodes(scanned.rel_path, cache_key)
+        cached_edges = store.cached_edges(scanned.rel_path, cache_key)
         if cached_nodes:
             nodes = [dict(row) for row in cached_nodes]
             edges = [dict(row) for row in cached_edges]
@@ -141,13 +244,24 @@ def map_project(
             edges = _edge_rows(extraction)
             store.replace_cached_extraction(
                 rel_path=scanned.rel_path,
-                sha256=sha256,
+                sha256=cache_key,
                 nodes=nodes,
                 edges=edges,
             )
             files_extracted += 1
 
-        written_nodes, written_edges = _write_rows(store, run_id, nodes, edges)
+        hierarchy_nodes, hierarchy_edges = _hierarchy_for_file(
+            scanned.rel_path,
+            nodes,
+            seen_folders,
+            seen_hierarchy_edges,
+        )
+        written_nodes, written_edges = _write_rows(
+            store,
+            run_id,
+            [*hierarchy_nodes, *nodes],
+            [*edges, *hierarchy_edges],
+        )
         node_count += written_nodes
         edge_count += written_edges
         store.upsert_file_state(

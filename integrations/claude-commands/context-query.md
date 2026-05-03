@@ -1,6 +1,6 @@
 # /context-query
 
-Use the existing Context Optimizer map to answer a targeted codebase question.
+Use the existing Cortext map to answer a targeted codebase question.
 
 Input: `$ARGUMENTS`
 

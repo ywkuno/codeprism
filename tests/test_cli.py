@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import json
 from pathlib import Path
 
 
@@ -18,3 +19,37 @@ def test_init_writes_default_config(tmp_path: Path):
     assert config.read_text(encoding="utf-8") == (
         'max_file_bytes = 500000\nignore = ["node_modules", ".git", "dist", "build", ".next"]\n'
     )
+
+
+def test_export_json_uses_json_default_output(tmp_path: Path):
+    (tmp_path / "app.py").write_text("def main():\n    return 1\n", encoding="utf-8")
+    map_result = subprocess.run(
+        [sys.executable, "-m", "contextopt.cli", "map", str(tmp_path), "--db", str(tmp_path / ".contextopt" / "context.db")],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert map_result.returncode == 0, map_result.stderr
+
+    export_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "contextopt.cli",
+            "export",
+            "--format",
+            "json",
+            "--db",
+            str(tmp_path / ".contextopt" / "context.db"),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert export_result.returncode == 0, export_result.stderr
+    assert (tmp_path / ".contextopt" / "context-pack.json").exists()
+    assert not (tmp_path / ".contextopt" / "context-pack.md").exists()
+    payload = json.loads((tmp_path / ".contextopt" / "context-pack.json").read_text())
+    assert payload["meta"]["schema_version"] == 1

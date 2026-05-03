@@ -24,7 +24,7 @@ def main() -> int:
         base / "integrations" / "claude-commands" / "context-query.md",
         root / ".claude" / "commands" / "context-query.md",
     )
-    print("Claude Skill folder is available under integrations/claude-skill/context-optimizer")
+    print("Cortext Claude Skill folder is available under integrations/claude-skill/cortext")
     return 0
 
 

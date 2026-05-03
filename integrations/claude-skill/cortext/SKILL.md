@@ -1,9 +1,9 @@
 ---
-name: context-optimizer
-description: Use when working in a repository that has Context Optimizer installed, especially before large refactors, bug hunts, or codebase exploration. Helps Claude read the project map first, then only inspect relevant files.
+name: cortext
+description: Use when working in a repository that has Cortext installed, especially before large refactors, bug hunts, or codebase exploration. Helps Claude read the project map first, then only inspect relevant files.
 ---
 
-# Context Optimizer Skill
+# Cortext Skill
 
 Use this skill to reduce token usage while working on large codebases.
 

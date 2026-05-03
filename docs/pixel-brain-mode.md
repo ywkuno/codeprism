@@ -1,5 +1,12 @@
 # Pixel Brain Mode
 
+## MVP line
+
+- MVP1: Cortext maps repos and exports context.
+- MVP2: Cortext generates a usable visual brain map and can replay simple activity events.
+- MVP3: Pixel Brain turns those events into animated replay with timeline controls, speed control, event list, and lightweight marker movement.
+- MVP4: Cortext adds token statistics and targeted slices so replay stays paired with actual context savings.
+
 ## The idea
 
 Take inspiration from the pixel office / pixel agents project:
@@ -23,7 +30,7 @@ It becomes a debugging / observability layer for agent workflows.
 ## Data inputs
 
 ### 1. Graph map
-Generated from Context Optimizer:
+Generated from Cortext:
 - nodes
 - edges
 - clusters
@@ -65,17 +72,18 @@ Examples:
 
 ## Suggested phases
 
-### Phase 1
-Define the event schema and log it.
-No fancy renderer yet.
+### MVP2 foundation
+Define the event schema, parse valid JSONL rows, preserve warnings for bad rows, and let the generated viewer replay one current event at a time.
 
-### Phase 2
-Build a simple HTML canvas prototype:
+### MVP3 prototype
+Build a simple browser prototype:
 - load graph JSON
-- load event JSONL
+- load normalized activity JSON
 - animate moving dots/sprites between nodes
+- show current event details
+- expose play / pause / reset / next / timeline / speed controls
 
-### Phase 3
+### Product renderer
 Create a proper game-ish renderer in `apps/pixel-brain`.
 Potential stacks:
 - Phaser
@@ -90,5 +98,6 @@ Show multiple agents collaborating or competing across the graph.
 
 - activity stream schema finalized
 - sample event log included
-- viewer can replay events over a graph
+- viewer can replay events over a graph and highlight touched nodes
 - at least one sprite/avatar can move between nodes in a deterministic replay
+- animation pauses cleanly and does no background work when stopped

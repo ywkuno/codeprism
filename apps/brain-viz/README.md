@@ -1,4 +1,4 @@
-# brain-viz (future app)
+# brain-viz (future Cortext app)
 
 This folder is reserved for a future polished visualization app.
 

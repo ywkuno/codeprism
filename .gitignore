@@ -11,6 +11,9 @@ build/
 .contextopt/*.db-*
 .contextopt/context-pack.*
 .contextopt/*.dot
+.contextopt/*.png
+.contextopt/config.toml
 .contextopt/visual/
+.contextopt/slices/
 .contextopt/cache/
 .DS_Store

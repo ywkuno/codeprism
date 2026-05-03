@@ -2,7 +2,7 @@
 
 ## Project purpose
 
-This repo implements Context Optimizer: a local-first codebase mapping tool that generates compact context packs for AI assistants.
+This repo implements Cortext: a local-first codebase mapping tool that generates compact context packs, graph exports, and visual replay data for AI assistants.
 
 ## Ground rules for agents
 
@@ -21,6 +21,9 @@ pytest
 ruff check .
 contextopt map .
 contextopt export --format md --out .contextopt/context-pack.md
+contextopt export --format json --out .contextopt/context-pack.json
+contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
+contextopt stats
 ```
 
 ## Architecture
