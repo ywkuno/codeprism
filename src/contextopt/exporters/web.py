@@ -89,6 +89,10 @@ HTML = """<!doctype html>
       <pre id="activityDetails">No activity stream loaded.</pre>
     </section>
     <section class="panel">
+      <h2>Context</h2>
+      <div id="contextSummary" class="activity-summary">No context overlay loaded.</div>
+    </section>
+    <section class="panel">
       <h2>Selected</h2>
       <div class="button-row">
         <button id="focusSelectionBtn" type="button">Focus</button>
@@ -270,6 +274,7 @@ pre {
 .node.selected circle { stroke: white; stroke-width: 3; }
 .node.neighbor circle { stroke: var(--accent); stroke-width: 2; }
 .node.activity circle { stroke: var(--warn); stroke-width: 4; }
+.node.context circle { stroke: var(--accent); stroke-width: 3; }
 .node.dimmed { opacity: 0.16; }
 .role-badge {
   fill: rgba(10, 13, 18, 0.84);
@@ -402,6 +407,8 @@ const state = {
   },
   activityNodeIds: new Set(),
   touchedOnly: false,
+  context: null,
+  contextNodeIds: new Set(),
   marker: { x: 0, y: 0, visible: false, animation: null },
   agentMarkers: new Map(),
   activityTrails: [],
@@ -423,6 +430,7 @@ const roleLegend = document.getElementById('roleLegend');
 const activitySummary = document.getElementById('activitySummary');
 const activityNow = document.getElementById('activityNow');
 const activityDetails = document.getElementById('activityDetails');
+const contextSummary = document.getElementById('contextSummary');
 const activitySearch = document.getElementById('activitySearch');
 const activityRunFilter = document.getElementById('activityRunFilter');
 const activityAgentFilter = document.getElementById('activityAgentFilter');
@@ -1021,9 +1029,10 @@ function renderGraph() {
     const selected = node.id === state.selectedId;
     const neighbor = neighborIds.has(node.id);
     const active = node.id === state.activeEventNodeId;
+    const contextIncluded = state.contextNodeIds.has(node.id);
     const dimmed = state.selectedId && !selected && !neighbor;
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('class', `node${selected ? ' selected' : ''}${neighbor ? ' neighbor' : ''}${active ? ' activity' : ''}${dimmed ? ' dimmed' : ''}`);
+    g.setAttribute('class', `node${selected ? ' selected' : ''}${neighbor ? ' neighbor' : ''}${active ? ' activity' : ''}${contextIncluded ? ' context' : ''}${dimmed ? ' dimmed' : ''}`);
     g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('r', node.kind === 'folder' ? 18 : ['file', 'doc'].includes(node.kind) ? 15 : 10);
@@ -1360,6 +1369,28 @@ function formatTokens(value) {
   return value ? `${Number(value).toLocaleString()} est. tokens` : 'no token estimate';
 }
 
+function renderContextSummary() {
+  if (!state.context) {
+    contextSummary.textContent = 'No context overlay loaded.';
+    return;
+  }
+  const sliceTokens = state.context.estimated_tokens || 0;
+  const fullTokens = state.context.full_context_estimated_tokens || 0;
+  const ratio = fullTokens ? Math.round((sliceTokens / fullTokens) * 100) : 0;
+  contextSummary.textContent = `${state.context.node_ids?.length || 0} included nodes - ${formatTokens(sliceTokens)} of ${formatTokens(fullTokens)} (${ratio}%)`;
+}
+
+function loadContextOverlay(payload) {
+  if (!payload || !Array.isArray(payload.node_ids)) {
+    renderContextSummary();
+    return;
+  }
+  state.context = payload;
+  state.contextNodeIds = new Set(payload.node_ids);
+  renderContextSummary();
+  renderGraph();
+}
+
 function eventLabel(event, index) {
   const agent = activityAgentId(event);
   const target = event.path || event.node_id || event.to_node_id || 'graph';
@@ -1504,10 +1535,12 @@ function escapeHtml(value) {
 Promise.all([
   fetch('graph-data.json').then((response) => response.json()),
   fetch('activity-stream.json').then((response) => response.ok ? response.json() : null).catch(() => null),
+  fetch('context-overlay.json').then((response) => response.ok ? response.json() : null).catch(() => null),
 ])
-  .then(([graphData, activityData]) => {
+  .then(([graphData, activityData, contextData]) => {
     buildScene(graphData || { meta: {}, nodes: [], edges: [] });
     loadActivity(activityData);
+    loadContextOverlay(contextData);
   })
   .catch((error) => {
     details.textContent = 'Failed to load graph-data.json\n\n' + String(error);
@@ -1520,6 +1553,7 @@ def export_web_visualization(
     out_dir: Path,
     *,
     activity_path: Path | None = None,
+    context_path: Path | None = None,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     export_json(store, out_dir / "graph-data.json")
@@ -1528,6 +1562,11 @@ def export_web_visualization(
         write_activity_payload(activity_path, activity_out)
     elif activity_out.exists():
         activity_out.unlink()
+    context_out = out_dir / "context-overlay.json"
+    if context_path is not None:
+        context_out.write_text(context_path.read_text(encoding="utf-8"), encoding="utf-8")
+    elif context_out.exists():
+        context_out.unlink()
     (out_dir / "index.html").write_text(HTML, encoding="utf-8")
     (out_dir / "styles.css").write_text(CSS, encoding="utf-8")
     (out_dir / "app.js").write_text(JS, encoding="utf-8")

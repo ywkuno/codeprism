@@ -88,6 +88,8 @@ The visualizer writes a normalized JSON payload:
 
 The standalone `contextopt activity normalize` command writes the same payload shape, which keeps adapters simple and avoids reading private agent session logs directly.
 
+Activity replay can be combined with context overlays by running `contextopt visualize --activity <activity.jsonl> --context <slice.json>`. Activity events show what was touched; context overlays show what was packed.
+
 ## Future fields
 
 Potential additions:

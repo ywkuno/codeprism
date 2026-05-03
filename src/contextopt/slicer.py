@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,26 @@ def _nodes_by_id(store: GraphStore) -> dict[str, dict[str, Any]]:
 def _edge_rows(store: GraphStore) -> list[dict[str, Any]]:
     where, params = _latest_run_filter(store)
     return [dict(row) for row in store.rows(f"SELECT * FROM edges {where}", params)]
+
+
+def _full_context_token_count(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) -> int:
+    payload = {
+        "nodes": [
+            {
+                "kind": node["kind"],
+                "path": node["path"],
+                "name": node["name"],
+                "start_line": node["start_line"],
+                "end_line": node["end_line"],
+            }
+            for node in nodes
+        ],
+        "edges": [
+            {"source": edge["source"], "target": edge["target"], "kind": edge["kind"]}
+            for edge in edges
+        ],
+    }
+    return estimate_tokens(json.dumps(payload, sort_keys=True))
 
 
 def _legacy_tokens_for_node(node: dict[str, Any]) -> set[str]:
@@ -80,6 +101,7 @@ def export_slice(
     matches = query_graph(store, query, limit)
     nodes_by_id = _nodes_by_id(store)
     edges = _resolve_edges(_edge_rows(store), nodes_by_id)
+    all_nodes = list(nodes_by_id.values())
     selected_ids = {_node_row_id(match) for match in matches}
     matched_ids = set(selected_ids)
 
@@ -121,11 +143,30 @@ def export_slice(
     text = "\n".join(lines) + "\n"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(text, encoding="utf-8")
+    estimated_tokens = estimate_tokens(text)
+    full_context_tokens = _full_context_token_count(all_nodes, edges)
+    ratio = round(estimated_tokens / full_context_tokens, 4) if full_context_tokens else 0
+    manifest_path = out.with_suffix(".json")
+    manifest = {
+        "schema_version": 1,
+        "query": query,
+        "markdown": str(out),
+        "node_ids": sorted(selected_ids),
+        "matched_node_ids": sorted(matched_ids),
+        "edge_count": len(selected_edges),
+        "estimated_tokens": estimated_tokens,
+        "full_context_estimated_tokens": full_context_tokens,
+        "estimated_token_ratio": ratio,
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return {
         "query": query,
         "matched_nodes": len(matched_ids),
         "written_nodes": len(selected_nodes),
         "direct_edges": len(selected_edges),
-        "estimated_tokens": estimate_tokens(text),
+        "estimated_tokens": estimated_tokens,
+        "full_context_estimated_tokens": full_context_tokens,
+        "estimated_token_ratio": ratio,
         "out": str(out),
+        "manifest": str(manifest_path),
     }

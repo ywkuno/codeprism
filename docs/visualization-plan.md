@@ -118,6 +118,9 @@ For richer visualization we should add:
 - `contextopt stats`
 - `contextopt slice <path-or-symbol>`
 - query-first docs for agent workflows
+- slice JSON manifests loaded as `context-overlay.json`
+- highlighted context-included nodes in the viewer
+- slice token estimate compared against full graph context estimate
 
 ### Phase G — better graph intelligence
 - explicit tree hierarchy

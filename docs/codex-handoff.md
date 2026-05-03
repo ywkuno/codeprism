@@ -26,6 +26,7 @@ contextopt visualize --outdir .contextopt/visual
 contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
 contextopt stats
 contextopt slice main --out .contextopt/slices/main.md
+contextopt visualize --context .contextopt/slices/main.json --outdir .contextopt/visual
 ```
 
 Then inspect generated files under `.contextopt/`.
@@ -56,6 +57,8 @@ Then inspect generated files under `.contextopt/`.
 - MVP2.7 adds semantic `meta.role` classification plus role filter, role legend, role colors, and role badges in the viewer.
 - MVP3 replay supports `from_node_id`, `to_node_id`, `duration_ms`, estimated/actual token fields, timeline controls, speed control, one marker per agent, activity trails, searchable event list, run/agent filters, jump-to-node, touched-only mode, and current-event HUD text.
 - MVP4 token workflow starts with `contextopt stats`, `contextopt query`, and `contextopt slice`.
+- `contextopt slice ...` writes Markdown plus a same-name JSON manifest for viewer context overlays.
+- `contextopt visualize --context .contextopt/slices/<name>.json ...` highlights included nodes and shows slice-vs-full context estimates.
 - `docs/visualization-plan.md` tracks the browser map plan.
 - `docs/pixel-brain-mode.md` and `docs/activity-stream-schema.md` cover the future activity replay layer.
 - `examples/activity-stream.sample.jsonl` is the sample event stream.

@@ -53,5 +53,11 @@ def test_export_slice_writes_matching_nodes_and_neighbors(tmp_path: Path) -> Non
     assert result["matched_nodes"] >= 1
     assert result["written_nodes"] >= result["matched_nodes"]
     assert result["estimated_tokens"] > 0
+    assert result["manifest"] == str(out.with_suffix(".json"))
+    assert result["full_context_estimated_tokens"] >= result["estimated_tokens"]
+    assert 0 < result["estimated_token_ratio"] <= 1
     assert "function::app.py::main" in text
     assert "Direct Edges" in text
+    manifest = out.with_suffix(".json").read_text(encoding="utf-8")
+    assert '"node_ids"' in manifest
+    assert '"full_context_estimated_tokens"' in manifest

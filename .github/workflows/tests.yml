@@ -35,3 +35,5 @@ jobs:
           contextopt activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
           contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
           contextopt stats
+          contextopt slice main --out .contextopt/slices/main.md
+          contextopt visualize --context .contextopt/slices/main.json --outdir .contextopt/visual

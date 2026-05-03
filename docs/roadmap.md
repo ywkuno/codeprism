@@ -84,6 +84,9 @@
 
 - `contextopt stats` for source, graph, and context-pack token estimates
 - `contextopt slice <path-or-symbol>` for targeted Markdown context packs
+- Slice JSON manifests for context-inclusion overlays
+- Viewer compares slice tokens against full graph context estimate
+- Viewer highlights context-included nodes
 - Query-first workflow docs for Codex/Claude usage
 - Honest estimated token reporting rather than benchmark claims
 - Future: rank slices by imports, call graph, changed files, and docs mentions

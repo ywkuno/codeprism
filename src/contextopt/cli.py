@@ -55,6 +55,7 @@ def main(argv: list[str] | None = None) -> int:
     p_visualize.add_argument("--db", default=".contextopt/context.db")
     p_visualize.add_argument("--outdir", default=".contextopt/visual")
     p_visualize.add_argument("--activity")
+    p_visualize.add_argument("--context")
     p_activity = sub.add_parser("activity", help="Work with normalized activity streams.")
     activity_sub = p_activity.add_subparsers(dest="activity_cmd", required=True)
     p_activity_normalize = activity_sub.add_parser(
@@ -126,10 +127,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "visualize":
         outdir = Path(args.outdir)
         activity_path = Path(args.activity) if args.activity else None
+        context_path = Path(args.context) if args.context else None
         html_path = export_web_visualization(
             GraphStore(Path(args.db)),
             outdir,
             activity_path=activity_path,
+            context_path=context_path,
         )
         print(f"Wrote visualization to {html_path}")
         return 0
@@ -166,7 +169,9 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"Wrote {result['out']} "
             f"({result['written_nodes']} nodes, {result['direct_edges']} edges, "
-            f"~{result['estimated_tokens']} tokens)."
+            f"~{result['estimated_tokens']} tokens, "
+            f"{result['estimated_token_ratio']:.2%} of full context). "
+            f"Manifest: {result['manifest']}"
         )
         return 0
     return 1

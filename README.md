@@ -52,6 +52,7 @@ contextopt visualize --outdir .contextopt/visual
 contextopt stats
 contextopt query "Where is authentication handled?"
 contextopt slice auth --out .contextopt/slices/auth.md
+contextopt visualize --context .contextopt/slices/auth.json --outdir .contextopt/visual
 ```
 
 Open `.contextopt/visual/index.html` in a browser to inspect the generated brain map.
@@ -84,7 +85,7 @@ The viewer activity panel includes local event search, run/agent filters, jump-t
 | `contextopt activity normalize` | Normalize safe JSONL activity events into replay JSON. |
 | `contextopt query "topic"` | Rank relevant files and symbols. |
 | `contextopt stats` | Estimate source, graph, and pack token sizes. |
-| `contextopt slice <target>` | Export a focused Markdown context slice. |
+| `contextopt slice <target>` | Export focused Markdown plus a JSON context overlay manifest. |
 
 ## Token-Saving Workflow
 
@@ -95,9 +96,10 @@ contextopt map .
 contextopt stats
 contextopt query "billing webhook"
 contextopt slice "billing webhook" --out .contextopt/slices/billing-webhook.md
+contextopt visualize --context .contextopt/slices/billing-webhook.json --outdir .contextopt/visual
 ```
 
-That gives an assistant a smaller, inspectable starting point. The assistant should still verify important details in raw source files before editing.
+That gives an assistant a smaller, inspectable starting point. The slice command writes both Markdown for the assistant and a JSON manifest for the viewer. The viewer highlights included nodes and shows the slice estimate against the full graph context estimate. The assistant should still verify important details in raw source files before editing.
 
 ## Privacy Model
 
@@ -129,6 +131,8 @@ ruff check .
 contextopt map .
 contextopt export --format json --out .contextopt/context-pack.json
 contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
+contextopt slice main --out .contextopt/slices/main.md
+contextopt visualize --context .contextopt/slices/main.json --outdir .contextopt/visual
 ```
 
 CI runs tests, Ruff, and a CLI smoke path across Python 3.10, 3.11, and 3.12.

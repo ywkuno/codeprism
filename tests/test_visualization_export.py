@@ -66,6 +66,10 @@ def test_visualization_export(tmp_path: Path) -> None:
     assert "function jumpToActivityNode" in js_text
     assert "function setTouchedOnly" in js_text
     assert "state.activityNodeIds" in js_text
+    assert "contextSummary" in html_text
+    assert "contextNodeIds" in js_text
+    assert "function loadContextOverlay" in js_text
+    assert "function renderContextSummary" in js_text
     assert "function showTooltip" in js_text
 
 
@@ -240,3 +244,23 @@ def test_visualization_export_accepts_malformed_activity_rows(tmp_path: Path) ->
     payload = json.loads((out_dir / "activity-stream.json").read_text(encoding="utf-8"))
     assert len(payload["events"]) == 2
     assert payload["warnings"]
+
+
+def test_visualization_export_copies_context_overlay(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    root.mkdir()
+    (root / "app.py").write_text("def main():\n    return 1\n", encoding="utf-8")
+    context = tmp_path / "slice.json"
+    context.write_text(
+        '{"schema_version":1,"query":"main","node_ids":["file::app.py"],'
+        '"estimated_tokens":10,"full_context_estimated_tokens":100}\n',
+        encoding="utf-8",
+    )
+    store = GraphStore(tmp_path / "context.db")
+    map_project(root, store)
+
+    out_dir = tmp_path / "visual"
+    export_web_visualization(store, out_dir, context_path=context)
+
+    copied = json.loads((out_dir / "context-overlay.json").read_text(encoding="utf-8"))
+    assert copied["node_ids"] == ["file::app.py"]
