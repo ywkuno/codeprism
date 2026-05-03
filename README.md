@@ -86,17 +86,17 @@ pip install -e ".[mcp]"
 codeprism mcp --list-tools
 ```
 
-`codeprism init` creates `.contextopt/config.toml` for local settings. Generated `.contextopt/` files are ignored by Git; see `examples/contextopt.config.example.toml` for the default config shape.
+`codeprism init` creates `.codeprism/config.toml` for local settings. Generated `.codeprism/` files are ignored by Git; see `examples/contextopt.config.example.toml` for the default config shape. Existing `.contextopt/` artifact folders are still read as a legacy fallback, but new artifacts use `.codeprism/`.
 
 ## Quick Start
 
 ```bash
 codeprism init
 codeprism prime "main"
-codeprism visualize --context .contextopt/slices/main.json --outdir .contextopt/visual
+codeprism visualize --context .codeprism/slices/main.json --outdir .codeprism/visual
 ```
 
-Read the generated `.contextopt/slices/main.md` before opening broad raw file trees. Open `.contextopt/visual/index.html` in a browser when you want the optional graph view.
+Read the generated `.codeprism/slices/main.md` before opening broad raw file trees. Open `.codeprism/visual/index.html` in a browser when you want the optional graph view.
 See [docs/demo.md](docs/demo.md) for the full activity replay and context-overlay walkthrough.
 
 For read-only checkouts or CI jobs, route generated artifacts outside the repository:
@@ -123,9 +123,9 @@ This copies project helpers into `.claude/commands/` and `.github/copilot-instru
 CodePrism can normalize a JSONL event stream and replay touched nodes in the viewer:
 
 ```bash
-codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
-codeprism activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
-codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
+codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .codeprism/activity-events.jsonl
+codeprism activity normalize examples/activity-stream.sample.jsonl --out .codeprism/activity-stream.json
+codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .codeprism/visual
 ```
 
 Activity rows can reference `node_id`, `from_node_id`, `to_node_id`, or `path`. Malformed rows are skipped and reported as warnings in the generated activity file.
@@ -136,7 +136,7 @@ The viewer activity panel includes local event search, run/agent filters, jump-t
 
 | Command | Purpose |
 | --- | --- |
-| `codeprism init` | Create a local `.contextopt/config.toml` file. |
+| `codeprism init` | Create a local `.codeprism/config.toml` file. |
 | `codeprism map .` | Scan the repo and update the SQLite graph. |
 | `codeprism export --format md` | Export a Markdown context pack. |
 | `codeprism export --format json` | Export stable graph JSON. |
@@ -158,7 +158,7 @@ The viewer activity panel includes local event search, run/agent filters, jump-t
 | `codeprism gain` | Report estimated token savings and map freshness. |
 | `codeprism slice <target>` | Export focused Markdown plus a JSON context overlay manifest. |
 | `codeprism benchmark <root>` | Write a reproducible local token-savings report. |
-| `codeprism onboard` | Write local project memory under `.contextopt/memory/`. |
+| `codeprism onboard` | Write local project memory under `.codeprism/memory/`. |
 | `codeprism memory list/read/write` | Manage inspectable local memory files. |
 | `codeprism mcp --list-tools` | List optional MCP tools for agent clients. |
 | `codeprism setup` | Install and verify agent helper files in one step. |
@@ -175,7 +175,7 @@ codeprism gain
 codeprism read src/app.py --mode signatures
 codeprism get function::src/app.py::billing_webhook
 codeprism references function::src/app.py::billing_webhook
-codeprism visualize --context .contextopt/slices/billing-webhook.json --outdir .contextopt/visual
+codeprism visualize --context .codeprism/slices/billing-webhook.json --outdir .codeprism/visual
 ```
 
 That gives an assistant a smaller, inspectable starting point. The prime command maps the repo, writes Markdown for the assistant, writes a JSON manifest for the viewer, and prints source/full-context/slice token estimates plus estimated savings. The gain command repeats the savings report and warns if files changed after the last map. The read command lets an agent inspect file shape before bodies, and the get command uses stable node IDs from slices, query results, or graph JSON to return only the requested source span.
@@ -194,7 +194,7 @@ For a repository that should not receive generated files, use:
 codeprism prime "what I need" --root PATH_TO_REPO --artifact-dir PATH_TO_ARTIFACTS --readonly-root
 ```
 
-This writes `context.db`, Markdown slices, and JSON manifests under the artifact directory instead of `.contextopt/` in the target repo.
+This writes `context.db`, Markdown slices, and JSON manifests under the artifact directory instead of `.codeprism/` in the target repo.
 
 For an MCP client, install the optional extra and launch the local stdio server:
 
@@ -215,13 +215,13 @@ codeprism memory read project
 To reproduce token-saving examples:
 
 ```bash
-codeprism benchmark examples/benchmarks/basic-python --query report --out .contextopt/benchmarks/basic-python.json
+codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
 ```
 
 ## Privacy Model
 
 - No network calls are made by default.
-- Generated artifacts live under `.contextopt/` by default, or under `--artifact-dir` when supplied.
+- Generated artifacts live under `.codeprism/` by default, or under `--artifact-dir` when supplied.
 - Outputs are inspectable text, JSON, DOT, HTML, or SQLite.
 - Optional LLM summarization is intentionally out of scope for the default path.
 
@@ -246,13 +246,13 @@ pip install -e ".[dev]"
 pytest
 ruff check .
 codeprism map .
-codeprism export --format json --out .contextopt/context-pack.json
+codeprism export --format json --out .codeprism/context-pack.json
 codeprism read README.md --mode signatures
 codeprism get "heading::README.md::Quick Start"
 codeprism gain
-codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
-codeprism slice main --out .contextopt/slices/main.md
-codeprism visualize --context .contextopt/slices/main.json --outdir .contextopt/visual
+codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .codeprism/visual
+codeprism slice main --out .codeprism/slices/main.md
+codeprism visualize --context .codeprism/slices/main.json --outdir .codeprism/visual
 codeprism setup --target project
 codeprism doctor
 ```

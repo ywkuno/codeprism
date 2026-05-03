@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .activity import write_activity_payload
 from .activity_adapters import adapt_tool_jsonl
+from .artifacts import ARTIFACT_DIR, artifact_path, config_path, resolve_artifact_path
 from .benchmark import default_benchmark_path, format_benchmark, run_benchmark
 from .config import load_config
 from .exporters.dot import export_dot
@@ -50,15 +51,15 @@ def main(argv: list[str] | None = None) -> int:
         description="CodePrism maps codebases into focused context slices for AI agents.",
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
-    p_init = sub.add_parser("init", help="Create .contextopt config directory.")
+    p_init = sub.add_parser("init", help=f"Create {ARTIFACT_DIR} config directory.")
     p_init.add_argument("--root", default=".")
     p_map = sub.add_parser("map", help="Scan and map a project.")
     p_map.add_argument("root", nargs="?", default=".")
-    p_map.add_argument("--db", default=".contextopt/context.db")
+    p_map.add_argument("--db")
     p_map.add_argument("--max-file-bytes", type=int)
     p_map.add_argument("--ignore", action="append", default=[])
     p_export = sub.add_parser("export", help="Export a context pack.")
-    p_export.add_argument("--db", default=".contextopt/context.db")
+    p_export.add_argument("--db")
     p_export.add_argument("--format", choices=["md", "json", "dot"], default="md")
     p_export.add_argument("--out")
     p_export.add_argument("--max-nodes", type=int, default=5000)
@@ -66,26 +67,26 @@ def main(argv: list[str] | None = None) -> int:
     p_export.add_argument("--max-chars", type=int)
     p_query = sub.add_parser("query", help="Query the local project map.")
     p_query.add_argument("text")
-    p_query.add_argument("--db", default=".contextopt/context.db")
+    p_query.add_argument("--db")
     p_query.add_argument("--limit", type=int, default=20)
     p_references = sub.add_parser("references", help="Show graph references for a node ID.")
     p_references.add_argument("node_id")
-    p_references.add_argument("--db", default=".contextopt/context.db")
+    p_references.add_argument("--db")
     p_get = sub.add_parser("get", help="Print exact source for a mapped node ID.")
     p_get.add_argument("node_id")
     p_get.add_argument("--root", default=".")
-    p_get.add_argument("--db", default=".contextopt/context.db")
+    p_get.add_argument("--db")
     p_read = sub.add_parser("read", help="Read a file through token-aware modes.")
     p_read.add_argument("path")
     p_read.add_argument("--mode", choices=["map", "signatures", "diff", "full"], default="map")
     p_read.add_argument("--root", default=".")
-    p_read.add_argument("--db", default=".contextopt/context.db")
+    p_read.add_argument("--db")
     p_stats = sub.add_parser("stats", help="Show local token and graph statistics.")
     p_stats.add_argument("root", nargs="?", default=".")
-    p_stats.add_argument("--db", default=".contextopt/context.db")
+    p_stats.add_argument("--db")
     p_gain = sub.add_parser("gain", help="Report estimated context savings and map freshness.")
     p_gain.add_argument("root", nargs="?", default=".")
-    p_gain.add_argument("--db", default=".contextopt/context.db")
+    p_gain.add_argument("--db")
     p_gain.add_argument("--slice", help="Optional slice manifest JSON. Defaults to latest local slice.")
     p_gain.add_argument("--max-file-bytes", type=int)
     p_gain.add_argument("--ignore", action="append", default=[])
@@ -105,7 +106,7 @@ def main(argv: list[str] | None = None) -> int:
     p_benchmark.add_argument("--ignore", action="append", default=[])
     p_mcp = sub.add_parser("mcp", help="Run the experimental CodePrism MCP server.")
     p_mcp.add_argument("--root", default=".")
-    p_mcp.add_argument("--db", default=".contextopt/context.db")
+    p_mcp.add_argument("--db")
     p_mcp.add_argument("--transport", choices=["stdio", "streamable-http"], default="stdio")
     p_mcp.add_argument("--list-tools", action="store_true")
     p_memory = sub.add_parser("memory", help="Read and write local CodePrism memory files.")
@@ -146,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_slice = sub.add_parser("slice", help="Export a targeted context slice.")
     p_slice.add_argument("query")
-    p_slice.add_argument("--db", default=".contextopt/context.db")
+    p_slice.add_argument("--db")
     p_slice.add_argument("--out")
     p_slice.add_argument("--limit", type=int, default=12)
     p_slice.add_argument("--path", action="append", default=[], help="Seed the slice with a file path.")
@@ -154,8 +155,8 @@ def main(argv: list[str] | None = None) -> int:
         "visualize",
         help="Generate an interactive browser view of the project map.",
     )
-    p_visualize.add_argument("--db", default=".contextopt/context.db")
-    p_visualize.add_argument("--outdir", default=".contextopt/visual")
+    p_visualize.add_argument("--db")
+    p_visualize.add_argument("--outdir")
     p_visualize.add_argument("--activity")
     p_visualize.add_argument("--context")
     p_setup = sub.add_parser(
@@ -205,19 +206,19 @@ def main(argv: list[str] | None = None) -> int:
         help="Normalize JSONL activity events into inspectable replay JSON.",
     )
     p_activity_normalize.add_argument("input")
-    p_activity_normalize.add_argument("--out", default=".contextopt/activity-stream.json")
+    p_activity_normalize.add_argument("--out")
     p_activity_adapt_tool = activity_sub.add_parser(
         "adapt-tool-log",
         help="Convert a simple tool-event JSONL log into CodePrism activity JSONL.",
     )
     p_activity_adapt_tool.add_argument("input")
-    p_activity_adapt_tool.add_argument("--out", default=".contextopt/activity-events.jsonl")
+    p_activity_adapt_tool.add_argument("--out")
     args = parser.parse_args(argv)
     if args.cmd == "init":
         root = Path(args.root).resolve()
-        ctx = root / ".contextopt"
+        ctx = root / ARTIFACT_DIR
         ctx.mkdir(exist_ok=True)
-        config = ctx / "config.toml"
+        config = config_path(root)
         if not config.exists():
             config.write_text(
                 "max_file_bytes = 500000\n"
@@ -229,7 +230,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "map":
         root = Path(args.root).resolve()
         config = load_config(root)
-        db = _prime_db_path(root, args.db, None)
+        db = _db_path(root, args.db, write=True)
         db.parent.mkdir(parents=True, exist_ok=True)
         result = map_project(
             root,
@@ -245,13 +246,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.cmd == "export":
         default_out = {
-            "md": ".contextopt/context-pack.md",
-            "json": ".contextopt/context-pack.json",
-            "dot": ".contextopt/imports.dot",
+            "md": "context-pack.md",
+            "json": "context-pack.json",
+            "dot": "imports.dot",
         }[args.format]
-        out = Path(args.out or default_out)
+        root = Path.cwd().resolve()
+        out = Path(args.out) if args.out else artifact_path(root, default_out)
         out.parent.mkdir(parents=True, exist_ok=True)
-        store = GraphStore(Path(args.db))
+        store = GraphStore(_db_path(root, args.db))
         if args.format == "dot":
             export_dot(store, out, max_edges=args.max_edges)
         elif args.format == "json":
@@ -267,11 +269,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Wrote {out}")
         return 0
     if args.cmd == "visualize":
-        outdir = Path(args.outdir)
+        root = Path.cwd().resolve()
+        outdir = Path(args.outdir) if args.outdir else artifact_path(root, "visual")
         activity_path = Path(args.activity) if args.activity else None
         context_path = Path(args.context) if args.context else None
         html_path = export_web_visualization(
-            GraphStore(Path(args.db)),
+            GraphStore(_db_path(root, args.db)),
             outdir,
             activity_path=activity_path,
             context_path=context_path,
@@ -342,7 +345,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if report["ok"] else 1
     if args.cmd == "activity":
         if args.activity_cmd == "normalize":
-            out = Path(args.out)
+            out = Path(args.out) if args.out else artifact_path(Path.cwd(), "activity-stream.json")
             payload = write_activity_payload(Path(args.input), out)
             summary = payload["summary"]
             print(
@@ -352,7 +355,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 0
         if args.activity_cmd == "adapt-tool-log":
-            out = Path(args.out)
+            out = Path(args.out) if args.out else artifact_path(Path.cwd(), "activity-events.jsonl")
             result = adapt_tool_jsonl(Path(args.input), out)
             print(
                 f"Wrote {out} "
@@ -360,22 +363,23 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 0
     if args.cmd == "query":
-        for row in query_graph(GraphStore(Path(args.db)), args.text, args.limit):
+        for row in query_graph(GraphStore(_db_path(Path.cwd(), args.db)), args.text, args.limit):
             print(f"{row['kind']:10} {row['path']} {row['name']}")
         return 0
     if args.cmd == "references":
         try:
-            result = find_references(GraphStore(Path(args.db)), args.node_id)
+            result = find_references(GraphStore(_db_path(Path.cwd(), args.db)), args.node_id)
         except ReferencesError as exc:
             print(f"Error: {exc}", file=sys.stderr)
             return 1
         print(format_references(result), end="")
         return 0
     if args.cmd == "get":
+        root = Path(args.root).resolve()
         try:
             result = retrieve_source(
-                GraphStore(Path(args.db)),
-                Path(args.root).resolve(),
+                GraphStore(_db_path(root, args.db)),
+                root,
                 args.node_id,
             )
         except RetrievalError as exc:
@@ -385,7 +389,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.cmd == "read":
         try:
-            store = GraphStore(Path(args.db)) if args.mode in {"map", "signatures"} else None
+            store = (
+                GraphStore(_db_path(Path(args.root).resolve(), args.db))
+                if args.mode in {"map", "signatures"}
+                else None
+            )
             result = read_path(
                 root=Path(args.root).resolve(),
                 path=args.path,
@@ -402,7 +410,7 @@ def main(argv: list[str] | None = None) -> int:
         config = load_config(root)
         stats = compute_stats(
             root,
-            GraphStore(Path(args.db)),
+            GraphStore(_db_path(root, args.db)),
             max_file_bytes=config.max_file_bytes,
             ignore_patterns=config.ignore,
         )
@@ -413,7 +421,7 @@ def main(argv: list[str] | None = None) -> int:
         config = load_config(root)
         gain = compute_gain(
             root,
-            GraphStore(Path(args.db)),
+            GraphStore(_db_path(root, args.db)),
             slice_path=Path(args.slice) if args.slice else None,
             max_file_bytes=args.max_file_bytes or config.max_file_bytes,
             ignore_patterns=[*config.ignore, *args.ignore],
@@ -423,7 +431,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "onboard":
         root = Path(args.root).resolve()
         config = load_config(root)
-        db = _prime_db_path(root, args.db, None)
+        db = _db_path(root, args.db, write=True)
         db.parent.mkdir(parents=True, exist_ok=True)
         store = GraphStore(db)
         map_project(
@@ -441,7 +449,7 @@ def main(argv: list[str] | None = None) -> int:
         config = load_config(root)
         out = Path(args.out) if args.out else default_benchmark_path(root, args.query)
         out.parent.mkdir(parents=True, exist_ok=True)
-        store = GraphStore(_prime_db_path(root, args.db, None))
+        store = GraphStore(_db_path(root, args.db, write=True))
         result = run_benchmark(
             root,
             store,
@@ -476,7 +484,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             run_mcp_server(
                 root=Path(args.root).resolve(),
-                db=Path(args.db),
+                db=_db_path(Path(args.root).resolve(), args.db),
                 transport=args.transport,
             )
         except McpDependencyError as exc:
@@ -539,7 +547,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "slice":
         out = Path(args.out) if args.out else default_slice_path(args.query)
         result = export_slice(
-            GraphStore(Path(args.db)),
+            GraphStore(_db_path(Path.cwd(), args.db)),
             args.query,
             out,
             limit=args.limit,
@@ -596,13 +604,22 @@ def _resolve_optional_path(value: str | None) -> Path | None:
     return path if path.is_absolute() else (Path.cwd() / path).resolve()
 
 
+def _db_path(root: Path, explicit_db: str | None, *, write: bool = False) -> Path:
+    return resolve_artifact_path(
+        root,
+        "context.db",
+        explicit=explicit_db,
+        prefer_existing_legacy=not write,
+    )
+
+
 def _prime_db_path(root: Path, explicit_db: str | None, artifact_dir: Path | None) -> Path:
     if explicit_db:
         db = Path(explicit_db).expanduser()
         return db if db.is_absolute() else root / db
     if artifact_dir:
         return artifact_dir / "context.db"
-    return root / ".contextopt" / "context.db"
+    return _db_path(root, None, write=True)
 
 
 def _prime_out_path(

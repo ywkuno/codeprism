@@ -17,7 +17,7 @@ codeprism init
 codeprism prime "main"
 ```
 
-This creates a local `.contextopt/context.db` SQLite graph and a focused `.contextopt/slices/main.md` file. Generated `.contextopt/` files are local working artifacts and should not be committed.
+This creates a local `.codeprism/context.db` SQLite graph and a focused `.codeprism/slices/main.md` file. Generated `.codeprism/` files are local working artifacts and should not be committed.
 
 During an edit session, seed the slice with changed, staged, and untracked Git files:
 
@@ -40,7 +40,7 @@ Replace `PATH_TO_REPO` and `PATH_TO_ARTIFACTS` with normal project and output pa
 ```bash
 codeprism stats
 codeprism gain
-codeprism benchmark examples/benchmarks/basic-python --query report --out .contextopt/benchmarks/basic-python.json
+codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
 ```
 
 The stats command reports local estimated token counts for source, graph, and context-pack outputs. The gain command reports estimated saved tokens and warns if files changed after the latest map. The benchmark command writes a reproducible JSON report for a fixture or target repo. These are estimates for comparison, not benchmark claims.
@@ -56,8 +56,8 @@ Restart Codex/Claude after installing global skills. The helpers tell agents to 
 
 The prime/slice workflow writes:
 
-- `.contextopt/slices/main.md` for an assistant-readable context slice
-- `.contextopt/slices/main.json` for the viewer context overlay
+- `.codeprism/slices/main.md` for an assistant-readable context slice
+- `.codeprism/slices/main.json` for the viewer context overlay
 
 Read progressively instead of opening whole files by default:
 
@@ -94,8 +94,8 @@ codeprism mcp --root .
 ## 5. Replay Activity
 
 ```bash
-codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
-codeprism activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
+codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .codeprism/activity-events.jsonl
+codeprism activity normalize examples/activity-stream.sample.jsonl --out .codeprism/activity-stream.json
 ```
 
 The adapter is intentionally simple and safe. It converts explicit tool-event rows into CodePrism activity JSONL. It does not read private agent session logs.
@@ -105,11 +105,11 @@ The adapter is intentionally simple and safe. It converts explicit tool-event ro
 ```bash
 codeprism visualize \
   --activity examples/activity-stream.sample.jsonl \
-  --context .contextopt/slices/main.json \
-  --outdir .contextopt/visual
+  --context .codeprism/slices/main.json \
+  --outdir .codeprism/visual
 ```
 
-Open `.contextopt/visual/index.html` in a browser.
+Open `.codeprism/visual/index.html` in a browser.
 
 The viewer supports:
 

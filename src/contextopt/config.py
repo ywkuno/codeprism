@@ -4,6 +4,8 @@ import ast
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .artifacts import existing_config_path
+
 
 @dataclass(frozen=True)
 class ContextOptConfig:
@@ -12,7 +14,7 @@ class ContextOptConfig:
 
 
 def load_config(root: Path) -> ContextOptConfig:
-    config_path = root.resolve() / ".contextopt" / "config.toml"
+    config_path = existing_config_path(root)
     if not config_path.exists():
         return ContextOptConfig()
 

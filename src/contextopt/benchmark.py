@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .artifacts import artifact_path
 from .gain import compute_gain
 from .graph import GraphStore
 from .mapper import map_project
@@ -17,7 +18,7 @@ def _slug(value: str) -> str:
 
 
 def default_benchmark_path(root: Path, query: str) -> Path:
-    return root.resolve() / ".contextopt" / "benchmarks" / f"{_slug(query)}.json"
+    return artifact_path(root, "benchmarks", f"{_slug(query)}.json")
 
 
 def run_benchmark(

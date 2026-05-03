@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from .artifacts import ARTIFACT_DIRS, artifact_path
 from .graph import GraphStore
 from .stats import compute_stats
 
@@ -11,7 +12,12 @@ class MemoryError(ValueError):
 
 
 def _memory_dir(root: Path) -> Path:
-    return root.resolve() / ".contextopt" / "memory"
+    return artifact_path(root, "memory")
+
+
+def _memory_dirs(root: Path) -> list[Path]:
+    resolved = root.resolve()
+    return [resolved / artifact_dir / "memory" for artifact_dir in ARTIFACT_DIRS]
 
 
 def _safe_name(name: str) -> str:
@@ -32,17 +38,20 @@ def memory_path(root: Path, name: str) -> Path:
 
 
 def list_memories(root: Path) -> list[str]:
-    directory = _memory_dir(root)
-    if not directory.exists():
-        return []
-    return sorted(path.name for path in directory.glob("*.md") if path.is_file())
+    names: set[str] = set()
+    for directory in _memory_dirs(root):
+        if directory.exists():
+            names.update(path.name for path in directory.glob("*.md") if path.is_file())
+    return sorted(names)
 
 
 def read_memory(root: Path, name: str) -> str:
-    path = memory_path(root, name)
-    if not path.exists():
-        raise MemoryError(f"memory not found: {name}")
-    return path.read_text(encoding="utf-8", errors="replace")
+    primary = memory_path(root, name)
+    paths = [primary, *[directory / primary.name for directory in _memory_dirs(root)[1:]]]
+    for path in paths:
+        if path.exists():
+            return path.read_text(encoding="utf-8", errors="replace")
+    raise MemoryError(f"memory not found: {name}")
 
 
 def write_memory(root: Path, name: str, text: str) -> Path:

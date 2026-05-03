@@ -10,6 +10,17 @@ def test_scan_files_ignores_node_modules(tmp_path: Path):
     assert [f.rel_path for f in scan_files(tmp_path)] == ["src/app.py"]
 
 
+def test_scan_files_ignores_current_and_legacy_artifact_dirs(tmp_path: Path):
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "app.py").write_text("print('hi')", encoding="utf-8")
+    (tmp_path / ".codeprism" / "slices").mkdir(parents=True)
+    (tmp_path / ".codeprism" / "slices" / "main.md").write_text("generated", encoding="utf-8")
+    (tmp_path / ".contextopt" / "slices").mkdir(parents=True)
+    (tmp_path / ".contextopt" / "slices" / "old.md").write_text("legacy", encoding="utf-8")
+
+    assert [f.rel_path for f in scan_files(tmp_path)] == ["src/app.py"]
+
+
 def test_scan_files_respects_gitignore_and_extra_patterns(tmp_path: Path):
     (tmp_path / ".gitignore").write_text(
         ".pytest_cache/\n*.egg-info/\n*.txt\n!important.txt\n",

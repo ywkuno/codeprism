@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ..artifacts import ARTIFACT_DIRS
 from ..graph import GraphStore
 from ..ids import stable_node_id
 
@@ -59,7 +60,10 @@ def classify_node_role(kind: str, path: str, name: str, meta: dict[str, Any] | N
 
     if kind == "module" or meta.get("external"):
         return "dependency"
-    if lower_path.startswith(".contextopt/") or "/.contextopt/" in lower_path:
+    if any(
+        lower_path.startswith(f"{artifact_dir}/") or f"/{artifact_dir}/" in lower_path
+        for artifact_dir in ARTIFACT_DIRS
+    ):
         return "generated"
     if basename in AGENT_FILES or "/claude-skill/" in lower_path or lower_path.startswith(
         ("integrations/claude", "integrations/codex", "integrations/copilot", ".claude/")

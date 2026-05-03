@@ -7,6 +7,17 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+.codeprism/
+.codeprism/*.db
+.codeprism/*.db-*
+.codeprism/context-pack.*
+.codeprism/activity-stream.json
+.codeprism/*.dot
+.codeprism/*.png
+.codeprism/config.toml
+.codeprism/visual*/
+.codeprism/slices/
+.codeprism/cache/
 .contextopt/
 .contextopt/*.db
 .contextopt/*.db-*

@@ -82,7 +82,7 @@ def test_onboard_writes_local_project_memory_and_memory_read_lists_it(tmp_path: 
     )
 
     assert result.returncode == 0, result.stderr
-    memory_path = tmp_path / ".contextopt" / "memory" / "project.md"
+    memory_path = tmp_path / ".codeprism" / "memory" / "project.md"
     assert memory_path.exists()
     memory_text = memory_path.read_text(encoding="utf-8")
     assert "# CodePrism Project Memory" in memory_text

@@ -6,6 +6,7 @@ from typing import Any, Sequence
 
 from .graph import GraphStore
 from .ids import stable_node_id
+from .artifacts import ARTIFACT_DIR
 from .query import query_graph
 from .token_estimator import estimate_tokens
 
@@ -131,7 +132,7 @@ def _sanitize_filename(text: str) -> str:
 
 
 def default_slice_path(query: str) -> Path:
-    return Path(".contextopt") / "slices" / f"{_sanitize_filename(query)}.md"
+    return Path(ARTIFACT_DIR) / "slices" / f"{_sanitize_filename(query)}.md"
 
 
 def _node_ids_for_paths(

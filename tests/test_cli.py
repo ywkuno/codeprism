@@ -5,6 +5,8 @@ import sys
 import json
 from pathlib import Path
 
+from contextopt.config import load_config
+
 
 def test_cli_help_uses_codeprism_as_public_name():
     result = subprocess.run(
@@ -36,16 +38,31 @@ def test_init_writes_default_config(tmp_path: Path):
     )
 
     assert result.returncode == 0, result.stderr
-    config = tmp_path / ".contextopt" / "config.toml"
+    config = tmp_path / ".codeprism" / "config.toml"
     assert config.read_text(encoding="utf-8") == (
         'max_file_bytes = 500000\nignore = ["node_modules", ".git", "dist", "build", ".next"]\n'
     )
+    assert not (tmp_path / ".contextopt").exists()
+
+
+def test_load_config_falls_back_to_legacy_contextopt_config(tmp_path: Path):
+    legacy_dir = tmp_path / ".contextopt"
+    legacy_dir.mkdir()
+    (legacy_dir / "config.toml").write_text(
+        'max_file_bytes = 123\nignore = ["generated"]\n',
+        encoding="utf-8",
+    )
+
+    config = load_config(tmp_path)
+
+    assert config.max_file_bytes == 123
+    assert config.ignore == ["generated"]
 
 
 def test_export_json_uses_json_default_output(tmp_path: Path):
     (tmp_path / "app.py").write_text("def main():\n    return 1\n", encoding="utf-8")
     map_result = subprocess.run(
-        [sys.executable, "-m", "contextopt.cli", "map", str(tmp_path), "--db", str(tmp_path / ".contextopt" / "context.db")],
+        [sys.executable, "-m", "contextopt.cli", "map", str(tmp_path)],
         capture_output=True,
         text=True,
         check=False,
@@ -60,8 +77,6 @@ def test_export_json_uses_json_default_output(tmp_path: Path):
             "export",
             "--format",
             "json",
-            "--db",
-            str(tmp_path / ".contextopt" / "context.db"),
         ],
         cwd=tmp_path,
         capture_output=True,
@@ -70,10 +85,42 @@ def test_export_json_uses_json_default_output(tmp_path: Path):
     )
 
     assert export_result.returncode == 0, export_result.stderr
-    assert (tmp_path / ".contextopt" / "context-pack.json").exists()
-    assert not (tmp_path / ".contextopt" / "context-pack.md").exists()
-    payload = json.loads((tmp_path / ".contextopt" / "context-pack.json").read_text())
+    assert (tmp_path / ".codeprism" / "context.db").exists()
+    assert (tmp_path / ".codeprism" / "context-pack.json").exists()
+    assert not (tmp_path / ".codeprism" / "context-pack.md").exists()
+    payload = json.loads((tmp_path / ".codeprism" / "context-pack.json").read_text())
     assert payload["meta"]["schema_version"] == 1
+
+
+def test_export_default_reads_legacy_contextopt_db(tmp_path: Path):
+    (tmp_path / "app.py").write_text("def main():\n    return 1\n", encoding="utf-8")
+    legacy_db = tmp_path / ".contextopt" / "context.db"
+    map_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "contextopt.cli",
+            "map",
+            str(tmp_path),
+            "--db",
+            str(legacy_db),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert map_result.returncode == 0, map_result.stderr
+
+    export_result = subprocess.run(
+        [sys.executable, "-m", "contextopt.cli", "export", "--format", "json"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert export_result.returncode == 0, export_result.stderr
+    assert (tmp_path / ".codeprism" / "context-pack.json").exists()
 
 
 def test_activity_normalize_command_writes_safe_payload(tmp_path: Path):
@@ -424,8 +471,8 @@ def test_prime_command_maps_and_writes_slice_first_workflow(tmp_path: Path):
     )
 
     assert result.returncode == 0, result.stderr
-    assert (tmp_path / ".contextopt" / "slices" / "billing-webhook.md").exists()
-    assert (tmp_path / ".contextopt" / "slices" / "billing-webhook.json").exists()
+    assert (tmp_path / ".codeprism" / "slices" / "billing-webhook.md").exists()
+    assert (tmp_path / ".codeprism" / "slices" / "billing-webhook.json").exists()
     assert "Read this slice first" in result.stdout
     assert "Source estimate:" in result.stdout
     assert "Slice estimate:" in result.stdout
@@ -457,8 +504,10 @@ def test_prime_defaults_outputs_under_root_when_called_elsewhere(tmp_path: Path)
     )
 
     assert result.returncode == 0, result.stderr
-    assert (project / ".contextopt" / "context.db").exists()
-    assert (project / ".contextopt" / "slices" / "target-symbol.md").exists()
+    assert (project / ".codeprism" / "context.db").exists()
+    assert (project / ".codeprism" / "slices" / "target-symbol.md").exists()
+    assert not (project / ".contextopt").exists()
+    assert not (outside / ".codeprism").exists()
     assert not (outside / ".contextopt").exists()
 
 
@@ -508,7 +557,7 @@ def test_prime_changed_seeds_slice_from_git_changes(tmp_path: Path):
     )
 
     assert result.returncode == 0, result.stderr
-    slice_text = (project / ".contextopt" / "slices" / "unrelated-query.md").read_text(
+    slice_text = (project / ".codeprism" / "slices" / "unrelated-query.md").read_text(
         encoding="utf-8"
     )
     assert "feature.py" in slice_text
@@ -545,6 +594,7 @@ def test_prime_artifact_dir_keeps_outputs_outside_readonly_root(tmp_path: Path):
     assert (artifacts / "context.db").exists()
     assert (artifacts / "slices" / "target-symbol.md").exists()
     assert (artifacts / "slices" / "target-symbol.json").exists()
+    assert not (project / ".codeprism").exists()
     assert not (project / ".contextopt").exists()
 
 
@@ -572,4 +622,5 @@ def test_prime_readonly_root_rejects_default_outputs_under_root(tmp_path: Path):
 
     assert result.returncode == 2
     assert "refusing to write artifacts inside read-only root" in result.stderr.lower()
+    assert not (project / ".codeprism").exists()
     assert not (project / ".contextopt").exists()
