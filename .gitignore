@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+*.egg-info/
+.contextopt/*.db
+.contextopt/*.db-*
+.contextopt/context-pack.*
+.contextopt/*.dot
+.contextopt/visual/
+.contextopt/cache/
+.DS_Store
