@@ -1,18 +1,18 @@
 # Activity Stream Schema
 
 This schema is the MVP2 foundation for visual overlays and the MVP3 pixel-agent replay loop.
-The source log format is newline-delimited JSON (`.jsonl`). `codeprism visualize --activity <file>` normalizes valid rows into `.contextopt/visual/activity-stream.json` and records warnings for malformed rows.
+The source log format is newline-delimited JSON (`.jsonl`). `codeprism visualize --activity <file>` normalizes valid rows into `.codeprism/visual/activity-stream.json` and records warnings for malformed rows.
 
 You can also normalize an activity stream without generating a viewer:
 
 ```bash
-codeprism activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
+codeprism activity normalize examples/activity-stream.sample.jsonl --out .codeprism/activity-stream.json
 ```
 
 For simple tool-event logs, CodePrism includes a conservative adapter example:
 
 ```bash
-codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
+codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .codeprism/activity-events.jsonl
 ```
 
 The adapter accepts safe fields such as `agent`, `type`, `file`, `tokens`, and `duration_ms`, then emits CodePrism activity JSONL. It does not read private session logs or infer hidden context.

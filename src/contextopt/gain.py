@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .artifacts import ARTIFACT_DIRS
 from .graph import GraphStore
 from .stats import compute_stats
 
@@ -19,10 +20,11 @@ def _saved_tokens(before: int, after: int) -> int:
 
 
 def _latest_slice_manifest(root: Path) -> Path | None:
-    slice_dir = root.resolve() / ".contextopt" / "slices"
-    if not slice_dir.exists():
-        return None
-    manifests = [path for path in slice_dir.glob("*.json") if path.is_file()]
+    manifests: list[Path] = []
+    for artifact_dir in ARTIFACT_DIRS:
+        slice_dir = root.resolve() / artifact_dir / "slices"
+        if slice_dir.exists():
+            manifests.extend(path for path in slice_dir.glob("*.json") if path.is_file())
     if not manifests:
         return None
     return max(manifests, key=lambda path: path.stat().st_mtime_ns)

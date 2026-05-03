@@ -11,7 +11,7 @@ You are continuing CodePrism.
 
 Primary product focus: context saving and token optimization. Treat visualization as a bonus inspection/replay layer.
 
-Public CLI examples use `codeprism`. The legacy `contextopt` console command and Python package path remain available for compatibility.
+Public CLI examples use `codeprism`. Generated artifacts now default to `.codeprism/`; existing `.contextopt/` artifacts are still readable as a legacy fallback. The legacy `contextopt` console command and Python package path remain available for compatibility.
 
 ## First task
 
@@ -22,32 +22,32 @@ pip install -e ".[dev]"
 pytest
 codeprism init
 codeprism map .
-codeprism export --format md --out .contextopt/context-pack.md
-codeprism export --format json --out .contextopt/context-pack.json
+codeprism export --format md --out .codeprism/context-pack.md
+codeprism export --format json --out .codeprism/context-pack.json
 codeprism read README.md --mode signatures
 codeprism get "heading::README.md::Quick Start"
 codeprism references "heading::README.md::Quick Start"
 codeprism prime main
 codeprism prime "current task" --changed
 codeprism prime "current task" --root PATH_TO_REPO --artifact-dir PATH_TO_ARTIFACTS --readonly-root
-codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
-codeprism activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
-codeprism visualize --outdir .contextopt/visual
-codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
+codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .codeprism/activity-events.jsonl
+codeprism activity normalize examples/activity-stream.sample.jsonl --out .codeprism/activity-stream.json
+codeprism visualize --outdir .codeprism/visual
+codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .codeprism/visual
 codeprism stats
 codeprism gain
-codeprism benchmark examples/benchmarks/basic-python --query report --out .contextopt/benchmarks/basic-python.json
+codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
 codeprism onboard --notes "Project purpose, build commands, and safety notes."
 codeprism memory read project
 codeprism mcp --list-tools
-codeprism slice main --out .contextopt/slices/main.md
-codeprism visualize --context .contextopt/slices/main.json --outdir .contextopt/visual
+codeprism slice main --out .codeprism/slices/main.md
+codeprism visualize --context .codeprism/slices/main.json --outdir .codeprism/visual
 codeprism setup --target project
 codeprism install-integrations --target all --force
 codeprism doctor
 ```
 
-Then inspect generated files under `.contextopt/`.
+Then inspect generated files under `.codeprism/`.
 
 ## Build order
 
@@ -67,7 +67,7 @@ Then inspect generated files under `.contextopt/`.
 - `codeprism export --format json` writes the graph as inspectable JSON.
 - JSON nodes use stable IDs that survive repeated map runs when paths and symbol names are unchanged.
 - Hierarchy edges model folders containing files/docs, files/docs containing symbols/headings/routes, and classes containing methods.
-- `codeprism visualize --outdir .contextopt/visual` writes a static browser viewer.
+- `codeprism visualize --outdir .codeprism/visual` writes a static browser viewer.
 - `codeprism visualize --activity ...` normalizes valid JSONL activity rows into `activity-stream.json`; malformed rows become warnings.
 - `codeprism activity normalize ...` writes the same normalized payload without generating a viewer.
 - `codeprism activity adapt-tool-log ...` converts simple safe tool-event JSONL into CodePrism activity JSONL.
@@ -84,11 +84,11 @@ Then inspect generated files under `.contextopt/`.
 - `codeprism read <path> --mode map|signatures|diff|full` lets agents inspect file shape, symbols, or one-file diffs before explicitly reading full files.
 - `codeprism gain` reports estimated saved tokens and warns when files changed after the latest map.
 - `codeprism references <node-id>` reports incoming and outgoing graph references.
-- `codeprism onboard` and `codeprism memory` manage inspectable local project memory under `.contextopt/memory/`.
+- `codeprism onboard` and `codeprism memory` manage inspectable local project memory under `.codeprism/memory/`.
 - `codeprism benchmark` writes reproducible JSON savings reports.
 - `codeprism mcp --list-tools` shows the experimental MCP tool surface; `codeprism mcp` needs the optional `.[mcp]` extra.
 - `codeprism slice ...` writes Markdown plus a same-name JSON manifest for viewer context overlays.
-- `codeprism visualize --context .contextopt/slices/<name>.json ...` highlights included nodes and shows slice-vs-full context estimates.
+- `codeprism visualize --context .codeprism/slices/<name>.json ...` highlights included nodes and shows slice-vs-full context estimates.
 - `codeprism install-integrations` installs local Codex/Claude/Copilot helpers that steer agents toward `codeprism prime` before broad file reads.
 - `codeprism setup` is the friendly install-and-verify path; it installs helpers and immediately runs `codeprism doctor`.
 - `codeprism doctor` checks installed helper files against bundled templates and returns nonzero when files are missing or stale.

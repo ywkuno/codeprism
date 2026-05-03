@@ -19,6 +19,7 @@ DEFAULT_IGNORE_DIRS = {
     ".pytest_cache",
     ".ruff_cache",
     ".mypy_cache",
+    ".codeprism",
     ".contextopt",
 }
 DEFAULT_IGNORE_SUFFIXES = {

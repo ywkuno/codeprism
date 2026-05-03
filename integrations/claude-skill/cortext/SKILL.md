@@ -29,7 +29,7 @@ For a read-only checkout or external target repo, route artifacts outside the re
 codeprism prime "topic, file, symbol, or bug" --root PATH_TO_REPO --artifact-dir PATH_TO_ARTIFACTS --readonly-root
 ```
 
-2. Read the generated slice Markdown first. By default it is under `.contextopt/slices/`; with `--artifact-dir`, it is under that artifact directory.
+2. Read the generated slice Markdown first. By default it is under `.codeprism/slices/`; with `--artifact-dir`, it is under that artifact directory.
 3. Use exact retrieval for specific mapped nodes before opening whole raw files:
 
 ```bash
@@ -70,7 +70,7 @@ codeprism doctor
 9. Use the visual map as a bonus inspection layer, not the first step:
 
 ```bash
-codeprism visualize --context .contextopt/slices/<slice>.json
+codeprism visualize --context .codeprism/slices/<slice>.json
 ```
 
 ## Rules

@@ -30,21 +30,21 @@ jobs:
           contextopt --help
           codeprism init
           codeprism map .
-          codeprism export --format md --out .contextopt/context-pack.md
-          codeprism export --format json --out .contextopt/context-pack.json
+          codeprism export --format md --out .codeprism/context-pack.md
+          codeprism export --format json --out .codeprism/context-pack.json
           codeprism read README.md --mode signatures
           codeprism get "heading::README.md::Quick Start"
           codeprism references "heading::README.md::Quick Start"
-          codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .contextopt/activity-events.jsonl
-          codeprism activity normalize examples/activity-stream.sample.jsonl --out .contextopt/activity-stream.json
-          codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
+          codeprism activity adapt-tool-log examples/tool-events.sample.jsonl --out .codeprism/activity-events.jsonl
+          codeprism activity normalize examples/activity-stream.sample.jsonl --out .codeprism/activity-stream.json
+          codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .codeprism/visual
           codeprism stats
-          codeprism slice main --out .contextopt/slices/main.md
+          codeprism slice main --out .codeprism/slices/main.md
           codeprism gain
-          codeprism benchmark examples/benchmarks/basic-python --query report --out .contextopt/benchmarks/basic-python.json
+          codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
           codeprism onboard --notes "CI smoke onboarding memory."
           codeprism memory list
           codeprism mcp --list-tools
-          codeprism visualize --context .contextopt/slices/main.json --outdir .contextopt/visual
+          codeprism visualize --context .codeprism/slices/main.json --outdir .codeprism/visual
           codeprism setup --target project
           codeprism doctor --target project

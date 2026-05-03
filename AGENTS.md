@@ -20,15 +20,15 @@ pip install -e ".[dev]"
 pytest
 ruff check .
 codeprism map .
-codeprism export --format md --out .contextopt/context-pack.md
-codeprism export --format json --out .contextopt/context-pack.json
+codeprism export --format md --out .codeprism/context-pack.md
+codeprism export --format json --out .codeprism/context-pack.json
 codeprism read README.md --mode signatures
 codeprism get "heading::README.md::Quick Start"
 codeprism references "heading::README.md::Quick Start"
-codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
+codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .codeprism/visual
 codeprism stats
 codeprism gain
-codeprism benchmark examples/benchmarks/basic-python --query report --out .contextopt/benchmarks/basic-python.json
+codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
 codeprism mcp --list-tools
 codeprism setup --target project
 codeprism doctor
