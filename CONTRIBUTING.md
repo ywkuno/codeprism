@@ -22,6 +22,7 @@ contextopt export --format json --out .contextopt/context-pack.json
 ```
 
 Generated `.contextopt/` artifacts are local working files and should usually stay out of commits.
+Use `examples/contextopt.config.example.toml` if you need to document config values without committing local `.contextopt/config.toml`.
 
 ## Project Principles
 

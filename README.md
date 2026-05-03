@@ -37,6 +37,8 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 ```
 
+`contextopt init` creates `.contextopt/config.toml` for local settings. Generated `.contextopt/` files are ignored by Git; see `examples/contextopt.config.example.toml` for the default config shape.
+
 ## Quick Start
 
 ```bash
@@ -125,6 +127,8 @@ contextopt map .
 contextopt export --format json --out .contextopt/context-pack.json
 contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
 ```
+
+CI runs tests, Ruff, and a CLI smoke path across Python 3.10, 3.11, and 3.12.
 
 ## Roadmap
 
