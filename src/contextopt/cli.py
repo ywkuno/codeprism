@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .activity import write_activity_payload
 from .config import load_config
 from .exporters.dot import export_dot
 from .exporters.json_export import export_json
@@ -53,6 +54,14 @@ def main(argv: list[str] | None = None) -> int:
     p_visualize.add_argument("--db", default=".contextopt/context.db")
     p_visualize.add_argument("--outdir", default=".contextopt/visual")
     p_visualize.add_argument("--activity")
+    p_activity = sub.add_parser("activity", help="Work with normalized activity streams.")
+    activity_sub = p_activity.add_subparsers(dest="activity_cmd", required=True)
+    p_activity_normalize = activity_sub.add_parser(
+        "normalize",
+        help="Normalize JSONL activity events into inspectable replay JSON.",
+    )
+    p_activity_normalize.add_argument("input")
+    p_activity_normalize.add_argument("--out", default=".contextopt/activity-stream.json")
     args = parser.parse_args(argv)
     if args.cmd == "init":
         root = Path(args.root).resolve()
@@ -117,6 +126,17 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"Wrote visualization to {html_path}")
         return 0
+    if args.cmd == "activity":
+        if args.activity_cmd == "normalize":
+            out = Path(args.out)
+            payload = write_activity_payload(Path(args.input), out)
+            summary = payload["summary"]
+            print(
+                f"Wrote {out} "
+                f"({summary['event_count']} events, {len(payload['warnings'])} warnings, "
+                f"~{summary['estimated_tokens']} estimated tokens)."
+            )
+            return 0
     if args.cmd == "query":
         for row in query_graph(GraphStore(Path(args.db)), args.text, args.limit):
             print(f"{row['kind']:10} {row['path']} {row['name']}")

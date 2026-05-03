@@ -7,4 +7,6 @@
 - Added MVP2.5 visual clarity controls for clean overview, layers, focus mode, hover tooltips, and map fitting.
 - Added MVP2.6 multi-column repo-tree layout with cluster-grid fallback.
 - Added MVP2.7 semantic node roles, role filter, role legend, role colors, and role badges.
+- Added MVP3 replay HUD, per-agent markers, activity trails, and token-aware activity summaries.
+- Added `contextopt activity normalize` plus searchable activity event lists in the viewer.
 - Added regression coverage for incremental mapping, visualization export, activity parsing, and token-efficiency helpers.

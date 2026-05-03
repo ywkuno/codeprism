@@ -10,10 +10,11 @@ build/
 .contextopt/*.db
 .contextopt/*.db-*
 .contextopt/context-pack.*
+.contextopt/activity-stream.json
 .contextopt/*.dot
 .contextopt/*.png
 .contextopt/config.toml
-.contextopt/visual/
+.contextopt/visual*/
 .contextopt/slices/
 .contextopt/cache/
 .DS_Store

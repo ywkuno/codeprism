@@ -53,3 +53,37 @@ def test_export_json_uses_json_default_output(tmp_path: Path):
     assert not (tmp_path / ".contextopt" / "context-pack.md").exists()
     payload = json.loads((tmp_path / ".contextopt" / "context-pack.json").read_text())
     assert payload["meta"]["schema_version"] == 1
+
+
+def test_activity_normalize_command_writes_safe_payload(tmp_path: Path):
+    activity = tmp_path / "activity.jsonl"
+    activity.write_text(
+        '{"agent_id":"codex","event":"file_read","path":"app.py","estimated_tokens":42}\n'
+        "bad row\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / ".contextopt" / "activity-stream.json"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "contextopt.cli",
+            "activity",
+            "normalize",
+            str(activity),
+            "--out",
+            str(out),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["summary"]["event_count"] == 1
+    assert payload["summary"]["estimated_tokens"] == 42
+    assert len(payload["warnings"]) == 1
+    assert "1 events" in result.stdout
+    assert "1 warnings" in result.stdout

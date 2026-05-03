@@ -69,6 +69,10 @@ HTML = """<!doctype html>
         <option value="2">2x</option>
         <option value="3">3x</option>
       </select>
+      <div id="activitySummary" class="activity-summary">No activity stream loaded.</div>
+      <div id="activityNow" class="activity-now">Ready.</div>
+      <label for="activitySearch">Find event</label>
+      <input id="activitySearch" placeholder="event, agent, path..." />
       <ol id="eventList" class="event-list"></ol>
       <pre id="activityDetails">No activity stream loaded.</pre>
     </section>
@@ -97,9 +101,11 @@ HTML = """<!doctype html>
     <svg id="graph" viewBox="0 0 1600 1000" aria-label="Interactive project map">
       <g id="viewport">
         <g id="edges"></g>
+        <g id="activityTrailLayer"></g>
         <g id="nodes"></g>
         <g id="labels"></g>
         <g id="activityMarkerLayer"></g>
+        <g id="agentMarkerLayer"></g>
       </g>
     </svg>
   </main>
@@ -215,6 +221,25 @@ pre {
   background: rgba(73,214,163,0.16);
   color: var(--text);
 }
+.event-list li.empty {
+  cursor: default;
+  color: var(--muted);
+  list-style: none;
+}
+.activity-summary,
+.activity-now {
+  background: #141922;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 10px;
+  padding: 9px;
+}
+.activity-now {
+  border-color: rgba(246, 200, 95, 0.34);
+  color: var(--text);
+}
 .swatch { width: 12px; height: 12px; border-radius: 999px; display: inline-block; }
 .role-chip {
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -248,12 +273,34 @@ pre {
 .edge { stroke: rgba(166,177,194,0.28); stroke-width: 1.1; }
 .edge.highlight { stroke: var(--accent); stroke-width: 2.4; }
 .edge.activity { stroke: var(--warn); stroke-width: 3; }
+.activity-trail {
+  stroke: var(--warn);
+  stroke-width: 2;
+  stroke-dasharray: 4 7;
+  opacity: 0.56;
+}
 .activity-marker-core { fill: var(--warn); stroke: white; stroke-width: 2; }
 .activity-marker-ring {
   fill: transparent;
   stroke: var(--warn);
   stroke-width: 2;
   opacity: 0.48;
+}
+.agent-marker {
+  pointer-events: none;
+}
+.agent-marker .agent-marker-core {
+  stroke: rgba(255, 255, 255, 0.86);
+  stroke-width: 2;
+}
+.agent-marker text {
+  fill: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: rgba(10, 13, 18, 0.92);
+  stroke-width: 3;
+  text-anchor: middle;
 }
 #tooltip {
   position: fixed;
@@ -305,6 +352,7 @@ const ROLE_STYLES = {
   dependency: { label: 'Dependency', badge: 'LIB', color: '#9ba6b5' },
   project: { label: 'Project', badge: 'PRJ', color: '#65b5ff' },
 };
+const AGENT_COLORS = ['#f0cc5a', '#d7a6ff', '#62dfcf', '#ff9f68', '#8fb7ff', '#49d6a3'];
 
 const state = {
   data: { meta: {}, nodes: [], edges: [] },
@@ -328,8 +376,10 @@ const state = {
     activity: true,
     labels: true,
   },
-  activity: { events: [], warnings: [], index: -1, timer: null, speed: 1 },
+  activity: { events: [], warnings: [], summary: null, index: -1, timer: null, speed: 1, query: '' },
   marker: { x: 0, y: 0, visible: false, animation: null },
+  agentMarkers: new Map(),
+  activityTrails: [],
 };
 
 const svg = document.getElementById('graph');
@@ -337,13 +387,18 @@ const viewport = document.getElementById('viewport');
 const nodeLayer = document.getElementById('nodes');
 const edgeLayer = document.getElementById('edges');
 const labelLayer = document.getElementById('labels');
+const activityTrailLayer = document.getElementById('activityTrailLayer');
 const activityMarkerLayer = document.getElementById('activityMarkerLayer');
+const agentMarkerLayer = document.getElementById('agentMarkerLayer');
 const tooltip = document.getElementById('tooltip');
 const details = document.getElementById('details');
 const stats = document.getElementById('stats');
 const legend = document.getElementById('legend');
 const roleLegend = document.getElementById('roleLegend');
+const activitySummary = document.getElementById('activitySummary');
+const activityNow = document.getElementById('activityNow');
 const activityDetails = document.getElementById('activityDetails');
+const activitySearch = document.getElementById('activitySearch');
 const timelineInput = document.getElementById('timeline');
 const speedSelect = document.getElementById('speed');
 const eventList = document.getElementById('eventList');
@@ -408,6 +463,10 @@ speedSelect.addEventListener('change', () => {
     playActivity();
   }
 });
+activitySearch.addEventListener('input', () => {
+  state.activity.query = activitySearch.value;
+  renderEventList();
+});
 searchInput.addEventListener('input', applyFilters);
 kindFilter.addEventListener('change', applyFilters);
 roleFilter.addEventListener('change', applyFilters);
@@ -420,8 +479,8 @@ layoutMode.addEventListener('change', () => {
 svg.addEventListener('wheel', (event) => {
   event.preventDefault();
   const factor = event.deltaY > 0 ? 0.92 : 1.08;
-  state.scale = Math.max(0.18, Math.min(5, state.scale * factor));
-  renderTransform();
+  const nextScale = Math.max(0.18, Math.min(5, state.scale * factor));
+  zoomAtPointer(event.clientX, event.clientY, nextScale);
 }, { passive: false });
 
 svg.addEventListener('mousedown', (event) => {
@@ -453,11 +512,36 @@ window.addEventListener('mouseup', () => {
 });
 
 function clientToWorld(clientX, clientY) {
-  const rect = svg.getBoundingClientRect();
+  const point = clientToSvgPoint(clientX, clientY);
   return {
-    x: (clientX - rect.left - state.tx) / state.scale,
-    y: (clientY - rect.top - state.ty) / state.scale,
+    x: (point.x - state.tx) / state.scale,
+    y: (point.y - state.ty) / state.scale,
   };
+}
+
+function clientToSvgPoint(clientX, clientY) {
+  const matrix = svg.getScreenCTM();
+  if (!matrix) {
+    const rect = svg.getBoundingClientRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+  const point = svg.createSVGPoint();
+  point.x = clientX;
+  point.y = clientY;
+  const transformed = point.matrixTransform(matrix.inverse());
+  return { x: transformed.x, y: transformed.y };
+}
+
+function zoomAtPointer(clientX, clientY, nextScale) {
+  const pointer = clientToSvgPoint(clientX, clientY);
+  const world = {
+    x: (pointer.x - state.tx) / state.scale,
+    y: (pointer.y - state.ty) / state.scale,
+  };
+  state.scale = nextScale;
+  state.tx = pointer.x - world.x * nextScale;
+  state.ty = pointer.y - world.y * nextScale;
+  renderTransform();
 }
 
 function renderTransform() {
@@ -926,6 +1010,9 @@ function renderGraph() {
     label.textContent = node.label;
     labelLayer.appendChild(label);
   }
+  renderActivityTrails();
+  renderActivityMarker();
+  renderAgentMarkers();
 }
 
 function shouldShowLabel(node, context) {
@@ -1037,6 +1124,16 @@ function setMarkerPosition(x, y, visible = true) {
   renderActivityMarker();
 }
 
+function activityAgentId(event) {
+  return (event && event.agent_id) ? String(event.agent_id) : 'agent';
+}
+
+function agentColor(agentId) {
+  let hash = 0;
+  for (const char of agentId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return AGENT_COLORS[hash % AGENT_COLORS.length];
+}
+
 function renderActivityMarker() {
   activityMarkerLayer.innerHTML = '';
   if (!state.marker.visible) return;
@@ -1053,6 +1150,66 @@ function renderActivityMarker() {
   activityMarkerLayer.appendChild(g);
 }
 
+function setAgentMarker(agentId, x, y, label) {
+  state.agentMarkers.set(agentId, { x, y, label: label || agentId, color: agentColor(agentId) });
+  renderAgentMarkers();
+}
+
+function renderAgentMarkers() {
+  agentMarkerLayer.innerHTML = '';
+  if (!state.layers.activity) return;
+  for (const [agentId, marker] of state.agentMarkers.entries()) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'agent-marker');
+    g.setAttribute('transform', `translate(${marker.x}, ${marker.y})`);
+    const core = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    core.setAttribute('r', 11);
+    core.setAttribute('class', 'agent-marker-core');
+    core.setAttribute('fill', marker.color);
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', 0);
+    label.setAttribute('y', -16);
+    label.textContent = marker.label.slice(0, 12);
+    g.appendChild(core);
+    g.appendChild(label);
+    agentMarkerLayer.appendChild(g);
+  }
+}
+
+function addActivityTrail(source, target, agentId) {
+  if (!source || !target || source === target) return;
+  const sourceNode = state.nodeById.get(source);
+  const targetNode = state.nodeById.get(target);
+  if (!sourceNode || !targetNode) return;
+  state.activityTrails.push({
+    source,
+    target,
+    agentId,
+    color: agentColor(agentId),
+    x1: sourceNode.x,
+    y1: sourceNode.y,
+    x2: targetNode.x,
+    y2: targetNode.y,
+  });
+  state.activityTrails = state.activityTrails.slice(-40);
+  renderActivityTrails();
+}
+
+function renderActivityTrails() {
+  activityTrailLayer.innerHTML = '';
+  if (!state.layers.activity) return;
+  for (const trail of state.activityTrails) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('class', 'activity-trail');
+    line.setAttribute('x1', trail.x1);
+    line.setAttribute('y1', trail.y1);
+    line.setAttribute('x2', trail.x2);
+    line.setAttribute('y2', trail.y2);
+    line.setAttribute('stroke', trail.color);
+    activityTrailLayer.appendChild(line);
+  }
+}
+
 function animateActivityMarker(fromId, toId, durationMs) {
   if (state.marker.animation) window.cancelAnimationFrame(state.marker.animation);
   const target = state.nodeById.get(toId);
@@ -1062,6 +1219,8 @@ function animateActivityMarker(fromId, toId, durationMs) {
     return;
   }
   const source = state.nodeById.get(fromId) || target;
+  const event = state.activity.events[state.activity.index] || null;
+  const agentId = activityAgentId(event);
   const duration = Math.max(120, Math.min(1400, (durationMs || 900) / Math.max(0.5, state.activity.speed)));
   const startedAt = performance.now();
   function step(now) {
@@ -1070,6 +1229,7 @@ function animateActivityMarker(fromId, toId, durationMs) {
     const x = source.x + (target.x - source.x) * eased;
     const y = source.y + (target.y - source.y) * eased;
     setMarkerPosition(x, y, true);
+    setAgentMarker(agentId, x, y, agentId);
     if (progress < 1) {
       state.marker.animation = window.requestAnimationFrame(step);
     } else {
@@ -1081,10 +1241,13 @@ function animateActivityMarker(fromId, toId, durationMs) {
 
 function renderEventList() {
   eventList.innerHTML = '';
+  let visibleCount = 0;
   state.activity.events.forEach((event, index) => {
+    if (!eventMatchesQuery(event, state.activity.query)) return;
+    visibleCount += 1;
     const item = document.createElement('li');
     item.className = index === state.activity.index ? 'active' : '';
-    item.textContent = `${index + 1}. ${event.event || 'event'} ${event.path || event.node_id || ''}`;
+    item.textContent = eventLabel(event, index);
     item.addEventListener('click', () => {
       pauseActivity();
       state.activity.index = index;
@@ -1092,6 +1255,61 @@ function renderEventList() {
     });
     eventList.appendChild(item);
   });
+  if (!visibleCount && state.activity.events.length) {
+    const item = document.createElement('li');
+    item.className = 'empty';
+    item.textContent = 'No matching events.';
+    eventList.appendChild(item);
+  }
+}
+
+function formatTokens(value) {
+  return value ? `${Number(value).toLocaleString()} est. tokens` : 'no token estimate';
+}
+
+function eventLabel(event, index) {
+  const agent = activityAgentId(event);
+  const target = event.path || event.node_id || event.to_node_id || 'graph';
+  const tokens = event.estimated_tokens ? ` - ${formatTokens(event.estimated_tokens)}` : '';
+  return `${index + 1}. ${agent} - ${event.event || 'event'} - ${target}${tokens}`;
+}
+
+function eventMatchesQuery(event, query) {
+  const normalized = (query || '').trim().toLowerCase();
+  if (!normalized) return true;
+  const haystack = [
+    activityAgentId(event),
+    event.event,
+    event.path,
+    event.node_id,
+    event.from_node_id,
+    event.to_node_id,
+    event.status,
+    event.severity,
+  ].filter(Boolean).join(' ').toLowerCase();
+  return haystack.includes(normalized);
+}
+
+function renderActivitySummary() {
+  const summary = state.activity.summary;
+  if (!summary) {
+    activitySummary.textContent = 'No activity stream loaded.';
+    return;
+  }
+  const agents = Array.isArray(summary.agents) ? summary.agents.join(', ') : '-';
+  activitySummary.textContent = `${summary.event_count || 0} events - ${summary.agent_count || 0} agents (${agents}) - ${formatTokens(summary.estimated_tokens || 0)}`;
+}
+
+function renderActivityNow(event) {
+  if (!event) {
+    activityNow.textContent = state.activity.events.length ? 'Replay reset. Press Play or Next.' : 'Ready.';
+    return;
+  }
+  const index = state.activity.index + 1;
+  const total = state.activity.events.length;
+  const agent = activityAgentId(event);
+  const target = event.path || event.node_id || event.to_node_id || 'graph';
+  activityNow.textContent = `${index}/${total} ${agent} - ${event.event || 'event'} - ${target} - ${formatTokens(event.estimated_tokens || 0)}`;
 }
 
 function showActivityEvent() {
@@ -1099,19 +1317,29 @@ function showActivityEvent() {
   state.activeEventNodeId = eventNodeId(event);
   if (!event) {
     activityDetails.textContent = state.activity.events.length ? 'Reset. Press play or next.' : 'No activity stream loaded.';
+    renderActivityNow(null);
     timelineInput.value = 0;
     state.marker.visible = false;
+    state.agentMarkers.clear();
+    state.activityTrails = [];
     renderActivityMarker();
+    renderAgentMarkers();
+    renderActivityTrails();
   } else {
     timelineInput.value = state.activity.index;
+    const agentId = activityAgentId(event);
+    const sourceId = eventSourceId(event);
     activityDetails.textContent = JSON.stringify({
       index: state.activity.index + 1,
       total: state.activity.events.length,
+      agent_id: agentId,
       event,
       highlighted_node_id: state.activeEventNodeId,
     }, null, 2);
+    renderActivityNow(event);
     if (state.activeEventNodeId) state.selectedId = state.activeEventNodeId;
-    animateActivityMarker(eventSourceId(event), state.activeEventNodeId, event.duration_ms || 900);
+    addActivityTrail(sourceId, state.activeEventNodeId, agentId);
+    animateActivityMarker(sourceId, state.activeEventNodeId, event.duration_ms || 900);
   }
   renderEventList();
   renderGraph();
@@ -1141,6 +1369,8 @@ function resetActivity() {
   pauseActivity();
   state.activity.index = -1;
   state.activeEventNodeId = null;
+  state.agentMarkers.clear();
+  state.activityTrails = [];
   if (state.marker.animation) window.cancelAnimationFrame(state.marker.animation);
   state.marker.animation = null;
   showActivityEvent();
@@ -1153,10 +1383,13 @@ function loadActivity(payload) {
   }
   state.activity.events = payload.events;
   state.activity.warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
+  state.activity.summary = payload.summary || null;
   state.activity.index = -1;
   timelineInput.max = Math.max(0, payload.events.length - 1);
   timelineInput.value = 0;
   renderEventList();
+  renderActivitySummary();
+  renderActivityNow(null);
   activityDetails.textContent = `Loaded ${payload.events.length} events` +
     (state.activity.warnings.length ? ` with ${state.activity.warnings.length} warnings.` : '.');
 }

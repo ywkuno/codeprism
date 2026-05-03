@@ -4,7 +4,7 @@
 
 - MVP1: Cortext maps repos and exports context.
 - MVP2: Cortext generates a usable visual brain map and can replay simple activity events.
-- MVP3: Pixel Brain turns those events into animated replay with timeline controls, speed control, event list, and lightweight marker movement.
+- MVP3: Pixel Brain turns those events into animated replay with timeline controls, speed control, event list, lightweight marker movement, agent trails, and token counters.
 - MVP4: Cortext adds token statistics and targeted slices so replay stays paired with actual context savings.
 
 ## The idea
@@ -82,6 +82,9 @@ Build a simple browser prototype:
 - animate moving dots/sprites between nodes
 - show current event details
 - expose play / pause / reset / next / timeline / speed controls
+- show a replay summary HUD with event count, agent count, and estimated tokens
+- keep one lightweight marker per agent and draw short-lived trails between touched nodes
+- filter the event list locally by agent, event type, path, or node ID
 
 ### Product renderer
 Create a proper game-ish renderer in `apps/pixel-brain`.
@@ -93,6 +96,8 @@ Potential stacks:
 ### Phase 4
 Multi-agent mode
 Show multiple agents collaborating or competing across the graph.
+
+The static MVP3 viewer already supports multi-agent markers from `agent_id`. A dedicated renderer can make this feel more like a pixel-world replay without changing the local JSONL contract.
 
 ## MVP acceptance criteria
 

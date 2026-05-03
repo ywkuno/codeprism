@@ -67,11 +67,14 @@
 
 ## MVP3 — Animated Pixel Brain / Agent Replay
 
-- Richer JSONL activity stream
-- Event replay timeline, event list, speed control, and reset
+- Richer JSONL activity stream with optional estimated and actual token counts
+- Event replay timeline, event list, speed control, next, and reset
 - Moving agent markers over known graph nodes
 - Deterministic path interpolation between touched nodes
-- Task timeline and playback controls
+- Short-lived activity trails between replayed source and target nodes
+- Replay HUD with event count, agent count, active event, and estimated tokens
+- Standalone `contextopt activity normalize` command for safe JSONL-to-replay payloads
+- Searchable event list for jumping to agents, event types, and paths
 - Context inclusion overlays
 - Pixel renderer scaffold in `apps/pixel-brain`
 

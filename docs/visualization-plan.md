@@ -105,6 +105,10 @@ For richer visualization we should add:
 - event list, timeline, speed control, and reset
 - lightweight marker movement with `requestAnimationFrame`
 - event highlighting by `node_id`, `from_node_id`, `to_node_id`, or `path`
+- one marker per `agent_id`
+- short activity trails between replayed source and target nodes
+- replay HUD with aggregate event, agent, duration, and token estimates
+- searchable event list for jumping to matching agents, event types, and paths
 - no animation work when paused
 
 ### Phase F — MVP4 token loop

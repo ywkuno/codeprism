@@ -32,6 +32,10 @@ def test_visualization_export(tmp_path: Path) -> None:
     assert "repo-tree" in html_text
     assert "cluster-grid" in html_text
     assert "tooltip" in html_text
+    assert "activityNow" in html_text
+    assert "activitySummary" in html_text
+    assert "activityTrailLayer" in html_text
+    assert "agentMarkerLayer" in html_text
     assert "function clearSelection()" in js_text
     assert "function applyLayout()" in js_text
     assert "function applyRepoTreeLayout" in js_text
@@ -44,6 +48,16 @@ def test_visualization_export(tmp_path: Path) -> None:
     assert "function nodeRole" in js_text
     assert "function populateRoleFilter" in js_text
     assert "function populateRoleLegend" in js_text
+    assert "function activityAgentId" in js_text
+    assert "function renderActivitySummary" in js_text
+    assert "function renderAgentMarkers" in js_text
+    assert "function renderActivityTrails" in js_text
+    assert "function zoomAtPointer" in js_text
+    assert "state.tx = pointer.x - world.x * nextScale" in js_text
+    assert "activitySearch" in html_text
+    assert "function eventLabel" in js_text
+    assert "function eventMatchesQuery" in js_text
+    assert "state.activity.query" in js_text
     assert "function showTooltip" in js_text
 
 
@@ -154,7 +168,7 @@ def test_activity_stream_parser_accepts_valid_jsonl(tmp_path: Path) -> None:
         '{"ts":"2026-05-03T02:00:00Z","run_id":"demo","agent_id":"codex",'
         '"event":"file_read","node_id":"file::app.py","from_node_id":"folder::.",'
         '"to_node_id":"file::app.py","duration_ms":750,"status":"ok","severity":"info",'
-        '"path":"app.py","meta":{"ok":true}}\n',
+        '"path":"app.py","estimated_tokens":123,"actual_tokens":145,"meta":{"ok":true}}\n',
         encoding="utf-8",
     )
 
@@ -167,7 +181,34 @@ def test_activity_stream_parser_accepts_valid_jsonl(tmp_path: Path) -> None:
     assert events[0]["duration_ms"] == 750
     assert events[0]["status"] == "ok"
     assert events[0]["severity"] == "info"
+    assert events[0]["estimated_tokens"] == 123
+    assert events[0]["actual_tokens"] == 145
     assert events[0]["meta"] == {"ok": True}
+
+
+def test_activity_payload_includes_summary(tmp_path: Path) -> None:
+    activity = tmp_path / "activity.jsonl"
+    activity.write_text(
+        '{"agent_id":"codex","event":"file_read","estimated_tokens":100,"duration_ms":500}\n'
+        '{"agent_id":"cortext","event":"context_pack_generated","estimated_tokens":25,'
+        '"actual_tokens":30,"duration_ms":250}\n',
+        encoding="utf-8",
+    )
+
+    from contextopt.activity import write_activity_payload
+
+    out = tmp_path / "activity.json"
+    write_activity_payload(activity, out)
+    payload = json.loads(out.read_text(encoding="utf-8"))
+
+    assert payload["summary"] == {
+        "event_count": 2,
+        "agent_count": 2,
+        "agents": ["codex", "cortext"],
+        "estimated_tokens": 125,
+        "actual_tokens": 30,
+        "duration_ms": 750,
+    }
 
 
 def test_visualization_export_accepts_malformed_activity_rows(tmp_path: Path) -> None:
