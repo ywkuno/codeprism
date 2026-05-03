@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -13,7 +14,12 @@ from .exporters.json_export import export_json
 from .exporters.markdown import export_markdown
 from .exporters.web import export_web_visualization
 from .graph import GraphStore
-from .integrations import default_claude_home, default_codex_home, install_integrations
+from .integrations import (
+    default_claude_home,
+    default_codex_home,
+    doctor_integrations,
+    install_integrations,
+)
 from .mapper import map_project
 from .query import query_graph
 from .slicer import default_slice_path, export_slice
@@ -85,6 +91,19 @@ def main(argv: list[str] | None = None) -> int:
     p_visualize.add_argument("--outdir", default=".contextopt/visual")
     p_visualize.add_argument("--activity")
     p_visualize.add_argument("--context")
+    p_setup = sub.add_parser(
+        "setup",
+        help="Install Cortext agent integrations and verify them with doctor.",
+    )
+    p_setup.add_argument("--root", default=".")
+    p_setup.add_argument(
+        "--target",
+        choices=["project", "global", "all", "codex", "claude"],
+        default="all",
+    )
+    p_setup.add_argument("--codex-home", default=str(default_codex_home()))
+    p_setup.add_argument("--claude-home", default=str(default_claude_home()))
+    p_setup.add_argument("--dry-run", action="store_true")
     p_install = sub.add_parser(
         "install-integrations",
         help="Install local Codex/Claude/Copilot helpers for query-first context use.",
@@ -99,6 +118,19 @@ def main(argv: list[str] | None = None) -> int:
     p_install.add_argument("--claude-home", default=str(default_claude_home()))
     p_install.add_argument("--dry-run", action="store_true")
     p_install.add_argument("--force", action="store_true")
+    p_doctor = sub.add_parser(
+        "doctor",
+        help="Check whether Cortext CLI and agent integrations are installed and current.",
+    )
+    p_doctor.add_argument("--root", default=".")
+    p_doctor.add_argument(
+        "--target",
+        choices=["project", "global", "all", "codex", "claude"],
+        default="all",
+    )
+    p_doctor.add_argument("--codex-home", default=str(default_codex_home()))
+    p_doctor.add_argument("--claude-home", default=str(default_claude_home()))
+    p_doctor.add_argument("--json", action="store_true")
     p_activity = sub.add_parser("activity", help="Work with normalized activity streams.")
     activity_sub = p_activity.add_subparsers(dest="activity_cmd", required=True)
     p_activity_normalize = activity_sub.add_parser(
@@ -179,6 +211,37 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"Wrote visualization to {html_path}")
         return 0
+    if args.cmd == "setup":
+        print("Cortext Setup")
+        print("")
+        install_result = install_integrations(
+            root=Path(args.root),
+            target=args.target,
+            codex_home=Path(args.codex_home),
+            claude_home=Path(args.claude_home),
+            dry_run=args.dry_run,
+            force=True,
+        )
+        action = "Would install" if args.dry_run else "Installed"
+        print(
+            f"{action} {install_result['planned']} Cortext integration files "
+            f"({install_result['copied']} copied, {install_result['skipped']} skipped)."
+        )
+        for path in install_result["paths"]:
+            print(path)
+        if args.dry_run:
+            return 0
+        print("")
+        report = doctor_integrations(
+            root=Path(args.root),
+            target=args.target,
+            codex_home=Path(args.codex_home),
+            claude_home=Path(args.claude_home),
+        )
+        _print_doctor_report(report)
+        if args.target in {"global", "all", "codex", "claude"}:
+            print("Restart Codex/Claude to pick up newly installed skills.")
+        return 0 if report["ok"] else 1
     if args.cmd == "install-integrations":
         result = install_integrations(
             root=Path(args.root),
@@ -198,6 +261,18 @@ def main(argv: list[str] | None = None) -> int:
         if args.target in {"global", "all", "codex", "claude"} and not args.dry_run:
             print("Restart Codex/Claude to pick up newly installed skills.")
         return 0
+    if args.cmd == "doctor":
+        report = doctor_integrations(
+            root=Path(args.root),
+            target=args.target,
+            codex_home=Path(args.codex_home),
+            claude_home=Path(args.claude_home),
+        )
+        if args.json:
+            print(json.dumps(report, indent=2, sort_keys=True))
+        else:
+            _print_doctor_report(report)
+        return 0 if report["ok"] else 1
     if args.cmd == "activity":
         if args.activity_cmd == "normalize":
             out = Path(args.out)
@@ -308,6 +383,27 @@ def _git_lines(root: Path, args: list[str]) -> list[str]:
     if result.returncode != 0:
         return []
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
+def _print_doctor_report(report: dict[str, object]) -> None:
+    print("Cortext Doctor")
+    print("")
+    for item in report["items"]:
+        if not isinstance(item, dict):
+            continue
+        print(f"[{item['status']}] {item['name']} - {item['path']}")
+        print(f"  {item['message']}")
+    summary = report["summary"]
+    if isinstance(summary, dict):
+        print("")
+        print(
+            "Summary: "
+            f"{summary.get('current', 0)} current, "
+            f"{summary.get('missing', 0)} missing, "
+            f"{summary.get('stale', 0)} stale."
+        )
+    if not report["ok"]:
+        print("Run `contextopt install-integrations --target all --force` to refresh helpers.")
 
 
 def _resolve_optional_path(value: str | None) -> Path | None:

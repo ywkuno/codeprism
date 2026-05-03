@@ -46,7 +46,8 @@ The stats command reports local estimated token counts for source, graph, and co
 ## 4. Install Agent Helpers
 
 ```bash
-contextopt install-integrations --target all --force
+contextopt setup
+contextopt doctor
 ```
 
 Restart Codex/Claude after installing global skills. The helpers tell agents to run `contextopt prime "<task>"` before broad file reads.

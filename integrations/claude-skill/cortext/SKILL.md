@@ -38,7 +38,13 @@ contextopt map .
 contextopt stats
 ```
 
-5. Use the visual map as a bonus inspection layer, not the first step:
+5. If Cortext behavior seems stale, check the installed helpers:
+
+```bash
+contextopt doctor
+```
+
+6. Use the visual map as a bonus inspection layer, not the first step:
 
 ```bash
 contextopt visualize --context .contextopt/slices/<slice>.json

@@ -3,13 +3,33 @@
 [![Tests](https://github.com/ywkuno/cortext/actions/workflows/tests.yml/badge.svg)](https://github.com/ywkuno/cortext/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Local-first context saving and token optimization for AI coding agents.
+Local-first context saving for AI coding agents.
 
-Cortext helps an assistant avoid reading the whole tree. It maps files, symbols, imports, routes, docs, and hierarchy into a local graph, then creates focused context slices for the task at hand.
+Cortext gives an agent a task-sized map before it reads your code. It scans files, symbols, imports, routes, docs, and hierarchy into a local graph, then writes focused Markdown slices for the work in front of you.
 
 The goal is simple: **map first, slice next, read raw files only when they matter.**
 
 ![Cortext brain map](docs/assets/cortext-brain-map.png)
+
+## Three Commands
+
+```bash
+pip install -e ".[dev]"
+contextopt setup
+contextopt prime "server boot path"
+```
+
+`contextopt setup` installs Codex/Claude/Copilot helper files and verifies them with `contextopt doctor`. `contextopt prime` maps the repo, writes a focused slice, and prints estimated token savings.
+
+For external or read-only repositories:
+
+```bash
+contextopt prime "server boot path" --root PATH_TO_REPO --artifact-dir PATH_TO_ARTIFACTS --readonly-root
+```
+
+## Why It Exists
+
+Agents waste context when they brute-read file trees, repeated shell output, generated folders, and source files that are only loosely related to the current task. Cortext is the local preflight layer: it gives the agent a compact, inspectable starting point so the expensive reasoning window stays focused.
 
 ## What It Does
 
@@ -19,6 +39,7 @@ The goal is simple: **map first, slice next, read raw files only when they matte
 - Reuses file hashes so unchanged files are not rescanned.
 - Runs `contextopt prime "<task>"` to map the repo and write a targeted slice in one step.
 - Estimates context size and creates targeted Markdown slices for focused work.
+- Routes generated artifacts outside a target repo with `--artifact-dir` and `--readonly-root`.
 - Exports Markdown, JSON, DOT, and static browser visualizations.
 - Generates stable graph data for tool integration and optional visual inspection.
 - Replays JSONL activity streams over the graph with agent markers, trails, timeline controls, and token estimates.
@@ -31,7 +52,7 @@ The core loop is usable today:
 
 - map a repository into a local SQLite graph
 - estimate context size and generate focused slices
-- install Codex/Claude/Copilot helpers that nudge agents toward slice-first exploration
+- install and verify Codex/Claude/Copilot helpers that nudge agents toward slice-first exploration
 - export Markdown, JSON, DOT, and static HTML views
 - inspect/search/filter the visual map as a bonus layer
 - replay safe JSONL activity events
@@ -72,10 +93,11 @@ Use a project-specific temp or output directory for `PATH_TO_ARTIFACTS` on Windo
 Install local helper prompts and skills so Codex, Claude, and Copilot start with Cortext before broad exploration:
 
 ```bash
-contextopt install-integrations --target all --force
+contextopt setup
+contextopt doctor
 ```
 
-This copies project helpers into `.claude/commands/` and `.github/copilot-instructions.md`, and installs the Cortext skill into local Codex and Claude skill folders. Restart Codex/Claude after installing global skills.
+This copies project helpers into `.claude/commands/` and `.github/copilot-instructions.md`, and installs the Cortext skill into local Codex and Claude skill folders. `contextopt doctor` reports whether those files are installed and current. Restart Codex/Claude after installing global skills.
 
 ## Activity Replay
 
@@ -109,7 +131,9 @@ The viewer activity panel includes local event search, run/agent filters, jump-t
 | `contextopt query "topic"` | Rank relevant files and symbols. |
 | `contextopt stats` | Estimate source, graph, and pack token sizes. |
 | `contextopt slice <target>` | Export focused Markdown plus a JSON context overlay manifest. |
+| `contextopt setup` | Install and verify agent helper files in one step. |
 | `contextopt install-integrations` | Install local Codex/Claude/Copilot helper files. |
+| `contextopt doctor` | Check whether installed helper files are present and current. |
 
 ## Token-Saving Workflow
 
@@ -170,6 +194,8 @@ contextopt export --format json --out .contextopt/context-pack.json
 contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
 contextopt slice main --out .contextopt/slices/main.md
 contextopt visualize --context .contextopt/slices/main.json --outdir .contextopt/visual
+contextopt setup --target project
+contextopt doctor
 ```
 
 CI runs tests, Ruff, and a CLI smoke path across Python 3.10, 3.11, and 3.12.
@@ -177,6 +203,10 @@ CI runs tests, Ruff, and a CLI smoke path across Python 3.10, 3.11, and 3.12.
 ## Roadmap
 
 Near-term work is focused on improving slice ranking, adding git-diff-aware context, measuring real token savings, and deepening static extraction without making the tool heavyweight. Visual polish is still planned, but context savings stay the main product. See `docs/roadmap.md` for the current plan.
+
+## Support
+
+If Cortext saves you time or tokens, sponsorship helps fund parser coverage, MCP support, reproducible benchmarks, and public docs. GitHub funding is configured in `.github/FUNDING.yml`; Ko-fi can be enabled there once a public Ko-fi handle is configured.
 
 ## License
 

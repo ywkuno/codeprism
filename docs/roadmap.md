@@ -89,6 +89,8 @@ Context saving is the main product direction. Visuals are the inspection and gam
 - `contextopt prime <task>` as the one-command agent preflight: map, estimate, slice, then read the slice first
 - `contextopt prime <task> --changed` seeds context from changed, staged, and untracked Git files
 - `contextopt prime <task> --artifact-dir <dir> --readonly-root` supports read-only repos and CI artifact routing
+- `contextopt setup` installs/refreshes agent helpers and runs `contextopt doctor`
+- `contextopt doctor` checks whether helper files are present and current
 - Prime output includes source, full-context, slice, estimated saving, file count, symbol count, and edge count
 - Slice JSON manifests for context-inclusion overlays
 - Viewer compares slice tokens against full graph context estimate
@@ -100,6 +102,9 @@ Context saving is the main product direction. Visuals are the inspection and gam
 - Honest estimated token reporting rather than benchmark claims
 - Next: rank slices by call graph signals, richer docs mentions, recent activity, and per-language ownership hints
 - Next: benchmark Cortext slices against full-source packs and other repo-packing tools using reproducible fixtures
+- Next: add exact source retrieval with `contextopt get`
+- Next: add token-aware read modes with `contextopt read --mode map|signatures|diff|full`
+- Next: expose prime/query/slice/get/read/stats through `contextopt mcp`
 
 ## Phase 5 — Agent integrations
 

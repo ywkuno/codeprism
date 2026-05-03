@@ -37,3 +37,5 @@ jobs:
           contextopt stats
           contextopt slice main --out .contextopt/slices/main.md
           contextopt visualize --context .contextopt/slices/main.json --outdir .contextopt/visual
+          contextopt setup --target project
+          contextopt doctor --target project

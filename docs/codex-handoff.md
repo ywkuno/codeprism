@@ -32,7 +32,9 @@ contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .
 contextopt stats
 contextopt slice main --out .contextopt/slices/main.md
 contextopt visualize --context .contextopt/slices/main.json --outdir .contextopt/visual
+contextopt setup --target project
 contextopt install-integrations --target all --force
+contextopt doctor
 ```
 
 Then inspect generated files under `.contextopt/`.
@@ -70,7 +72,10 @@ Then inspect generated files under `.contextopt/`.
 - `contextopt slice ...` writes Markdown plus a same-name JSON manifest for viewer context overlays.
 - `contextopt visualize --context .contextopt/slices/<name>.json ...` highlights included nodes and shows slice-vs-full context estimates.
 - `contextopt install-integrations` installs local Codex/Claude/Copilot helpers that steer agents toward `contextopt prime` before broad file reads.
+- `contextopt setup` is the friendly install-and-verify path; it installs helpers and immediately runs `contextopt doctor`.
+- `contextopt doctor` checks installed helper files against bundled templates and returns nonzero when files are missing or stale.
 - Dedicated extractors now cover Python, Markdown, JavaScript/TypeScript, and Java; common other languages use a deterministic generic fallback.
+- `docs/community-comparison.md` tracks lessons from GSD, jCodeMunch, LeanCTX, CocoIndex Code, and Graphify.
 - `docs/visualization-plan.md` tracks the browser map plan.
 - `docs/pixel-brain-mode.md` and `docs/activity-stream-schema.md` cover the future activity replay layer.
 - `examples/activity-stream.sample.jsonl` is the sample event stream.

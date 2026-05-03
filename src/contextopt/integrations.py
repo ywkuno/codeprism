@@ -8,6 +8,7 @@ from typing import Literal, TypedDict
 
 
 InstallTarget = Literal["project", "global", "all", "codex", "claude"]
+DoctorStatus = Literal["current", "missing", "stale"]
 
 
 class InstallResult(TypedDict):
@@ -15,6 +16,19 @@ class InstallResult(TypedDict):
     copied: int
     skipped: int
     paths: list[str]
+
+
+class DoctorItem(TypedDict):
+    name: str
+    path: str
+    status: DoctorStatus
+    message: str
+
+
+class DoctorReport(TypedDict):
+    ok: bool
+    summary: dict[str, int]
+    items: list[DoctorItem]
 
 
 @dataclass(frozen=True)
@@ -126,3 +140,66 @@ def install_integrations(
         result["copied"] += 1
 
     return result
+
+
+def _doctor_item(item: IntegrationCopy) -> DoctorItem:
+    name = item.dst.name
+    if item.dst.parent.name:
+        name = f"{item.dst.parent.name}/{name}"
+    if not item.dst.exists():
+        return {
+            "name": name,
+            "path": str(item.dst),
+            "status": "missing",
+            "message": "not installed",
+        }
+    try:
+        source_bytes = item.src.read_bytes()
+        installed_bytes = item.dst.read_bytes()
+    except OSError as exc:
+        return {
+            "name": name,
+            "path": str(item.dst),
+            "status": "stale",
+            "message": f"could not compare files: {exc}",
+        }
+    if source_bytes == installed_bytes:
+        return {
+            "name": name,
+            "path": str(item.dst),
+            "status": "current",
+            "message": "installed and current",
+        }
+    return {
+        "name": name,
+        "path": str(item.dst),
+        "status": "stale",
+        "message": "installed file differs from bundled template",
+    }
+
+
+def doctor_integrations(
+    *,
+    root: Path | str = ".",
+    target: InstallTarget = "all",
+    codex_home: Path | str | None = None,
+    claude_home: Path | str | None = None,
+) -> DoctorReport:
+    root_path = Path(root)
+    codex_home_path = Path(codex_home) if codex_home is not None else default_codex_home()
+    claude_home_path = Path(claude_home) if claude_home is not None else default_claude_home()
+    copies = planned_integrations(
+        root=root_path,
+        target=target,
+        codex_home=codex_home_path,
+        claude_home=claude_home_path,
+    )
+    items = [_doctor_item(item) for item in copies]
+    summary = {"current": 0, "missing": 0, "stale": 0}
+    for item in items:
+        summary[item["status"]] += 1
+    return {
+        "ok": summary["missing"] == 0 and summary["stale"] == 0,
+        "summary": summary,
+        "items": items,
+    }

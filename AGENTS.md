@@ -24,6 +24,8 @@ contextopt export --format md --out .contextopt/context-pack.md
 contextopt export --format json --out .contextopt/context-pack.json
 contextopt visualize --activity examples/activity-stream.sample.jsonl --outdir .contextopt/visual
 contextopt stats
+contextopt setup --target project
+contextopt doctor
 ```
 
 ## Architecture
