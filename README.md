@@ -42,7 +42,7 @@ Agents waste context when they brute-read file trees, repeated shell output, gen
 - Uses a broad static fallback for common languages such as C/C++, C#, Go, Rust, Ruby, PHP, Kotlin, Swift, shell, PowerShell, and Lua.
 - Reuses file hashes so unchanged files are not rescanned.
 - Runs `codeprism prime "<task>"` to map the repo and write a targeted slice in one step.
-- Caps generated slice Markdown to about 16K estimated tokens by default so the slice itself does not swamp the agent context window.
+- Caps generated slice Markdown to about 8K estimated tokens by default so the slice itself does not swamp the agent context window.
 - Fetches exact mapped source with `codeprism get <node-id>` so agents can inspect one symbol or file before opening broader code.
 - Reads files through token-aware modes with `codeprism read <path> --mode map|signatures|diff|full`.
 - Shows graph references with `codeprism references <node-id>`.
@@ -161,7 +161,8 @@ The viewer activity panel includes local event search, run/agent filters, jump-t
 | `codeprism prime "topic"` | Map the repo, write a focused slice, and print a savings report. |
 | `codeprism prime "topic" --changed` | Seed the slice with changed, staged, and untracked Git files. |
 | `codeprism prime "topic" --artifact-dir <dir> --readonly-root` | Write prime artifacts outside the target repo and refuse root writes. |
-| `codeprism prime "topic" --max-tokens 12000` | Tighten the generated slice budget for short task loops. |
+| `codeprism prime "topic" --max-tokens 6000` | Tighten the generated slice budget for short task loops. |
+| `codeprism prime "topic" --allow-large-context --max-tokens 24000` | Explicitly opt into a large slice when the task genuinely needs it. |
 | `codeprism visualize --outdir <dir>` | Generate a static browser viewer and auto-load `.codeprism/live-trace.jsonl` when present. |
 | `--refresh` | Incrementally refresh the map before a context-consuming command. |
 | `--strict-fresh` | Fail when the map is stale instead of warning. |
@@ -201,7 +202,7 @@ codeprism visualize --context .codeprism/slices/billing-webhook.json --outdir .c
 
 That gives an assistant a smaller, inspectable starting point. The prime command maps the repo, writes Markdown for the assistant, writes a JSON manifest for the viewer, and prints source/full-context/slice token estimates plus estimated savings. The gain command repeats the savings report and warns if files changed after the last map. The read command lets an agent inspect file shape before bodies, and the get command uses stable node IDs from slices, query results, or graph JSON to return only the requested source span.
 
-Generated slices are capped to about 16K estimated tokens by default. If a slice says it was capped, keep the next step narrow: use `codeprism query`, `codeprism get`, `codeprism references`, or `codeprism read --mode signatures/diff` instead of raising the budget reflexively.
+Generated slices are capped to about 8K estimated tokens by default, with a safe ceiling of 16K unless `--allow-large-context` is supplied. If a slice says it was capped, keep the next step narrow: use `codeprism query`, `codeprism get`, `codeprism references`, or `codeprism read --mode signatures/diff` instead of raising the budget reflexively.
 
 During active edits, seed the slice from Git changes:
 

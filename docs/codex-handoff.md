@@ -83,7 +83,8 @@ Then inspect generated files under `.codeprism/`.
 - The static viewer labels this panel Live Trace and uses lightweight SVG/CSS pulse trails, not a heavy canvas loop.
 - MVP4 token workflow starts with `codeprism stats`, `codeprism gain`, `codeprism query`, and `codeprism slice`.
 - `codeprism prime <task>` maps, estimates, and writes a focused slice in one step.
-- `codeprism prime` and `codeprism slice` cap generated Markdown to about 16K estimated tokens by default; capped slices should lead to narrower `query/get/references/read` calls, not automatic budget increases.
+- `codeprism prime` and `codeprism slice` cap generated Markdown to about 8K estimated tokens by default; capped slices should lead to narrower `query/get/references/read` calls, not automatic budget increases.
+- Slice budgets above 16K, including uncapped output, fail unless the command explicitly includes `--allow-large-context`.
 - `codeprism prime <task> --changed` seeds the slice with changed, staged, and untracked Git files.
 - `codeprism prime <task> --artifact-dir <dir> --readonly-root` routes generated artifacts outside a target repo and refuses root writes.
 - Prime prints source, full-context, slice, estimated saving, included file/symbol/edge counts, and changed-file count when used.

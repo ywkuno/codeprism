@@ -34,7 +34,12 @@ from .query import query_graph
 from .read_modes import ReadError, format_read_result, read_path
 from .references import ReferencesError, find_references, format_references
 from .retrieval import RetrievalError, format_retrieved_source, retrieve_source
-from .slicer import DEFAULT_SLICE_MAX_TOKENS, default_slice_path, export_slice
+from .slicer import (
+    DEFAULT_SLICE_MAX_TOKENS,
+    MAX_SAFE_SLICE_TOKENS,
+    default_slice_path,
+    export_slice,
+)
 from .stats import compute_stats, format_stats
 
 
@@ -171,6 +176,11 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_SLICE_MAX_TOKENS,
         help="Approximate maximum tokens for the generated slice markdown. Use 0 for no cap.",
     )
+    p_prime.add_argument(
+        "--allow-large-context",
+        action="store_true",
+        help="Permit --max-tokens above the safe budget. Use only for explicit large-context work.",
+    )
     p_prime.add_argument("--max-file-bytes", type=int)
     p_prime.add_argument("--ignore", action="append", default=[])
     _add_lock_args(p_prime)
@@ -189,6 +199,11 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=DEFAULT_SLICE_MAX_TOKENS,
         help="Approximate maximum tokens for the generated slice markdown. Use 0 for no cap.",
+    )
+    p_slice.add_argument(
+        "--allow-large-context",
+        action="store_true",
+        help="Permit --max-tokens above the safe budget. Use only for explicit large-context work.",
     )
     p_slice.add_argument(
         "--path", action="append", default=[], help="Seed the slice with a file path."
@@ -736,6 +751,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.cmd == "prime":
         root = Path(args.root).resolve()
+        if not _validate_slice_budget(args.max_tokens, args.allow_large_context):
+            return 2
         changed_paths = _changed_paths(root) if args.changed else []
         artifact_dir = _resolve_optional_path(args.artifact_dir)
         db = _prime_db_path(root, args.db, artifact_dir)
@@ -831,6 +848,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "slice":
         out = Path(args.out) if args.out else default_slice_path(args.query)
         root = Path.cwd().resolve()
+        if not _validate_slice_budget(args.max_tokens, args.allow_large_context):
+            return 2
         try:
             store = _fresh_context_store(
                 root,
@@ -869,6 +888,22 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     return 1
+
+
+def _validate_slice_budget(max_tokens: int | None, allow_large_context: bool) -> bool:
+    if allow_large_context:
+        return True
+    if max_tokens is None:
+        return True
+    if max_tokens <= 0 or max_tokens > MAX_SAFE_SLICE_TOKENS:
+        print(
+            "Error: unsafe slice budget. "
+            f"Default is {DEFAULT_SLICE_MAX_TOKENS}; safe maximum is {MAX_SAFE_SLICE_TOKENS}. "
+            "Narrow the task, or pass --allow-large-context only when explicitly needed.",
+            file=sys.stderr,
+        )
+        return False
+    return True
 
 
 def _git_lines(root: Path, args: list[str]) -> list[str]:
