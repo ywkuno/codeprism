@@ -910,6 +910,63 @@ def test_prime_readonly_root_rejects_default_outputs_under_root(tmp_path: Path):
     assert not (project / ".contextopt").exists()
 
 
+def test_prime_refuses_unsafe_large_slice_budget(tmp_path: Path):
+    (tmp_path / "app.py").write_text("def target_symbol():\n    return 1\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "contextopt.cli",
+            "prime",
+            "target symbol",
+            "--root",
+            str(tmp_path),
+            "--max-tokens",
+            "50000",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "unsafe slice budget" in result.stderr.lower()
+    assert not (tmp_path / ".codeprism" / "context.db").exists()
+
+
+def test_slice_refuses_uncapped_budget_without_explicit_override(tmp_path: Path):
+    (tmp_path / "app.py").write_text("def target_symbol():\n    return 1\n", encoding="utf-8")
+    map_result = subprocess.run(
+        [sys.executable, "-m", "contextopt.cli", "map", str(tmp_path)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert map_result.returncode == 0, map_result.stderr
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "contextopt.cli",
+            "slice",
+            "target symbol",
+            "--max-tokens",
+            "0",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "unsafe slice budget" in result.stderr.lower()
+
+
 def test_visualize_auto_loads_live_trace_when_present(tmp_path: Path):
     (tmp_path / "app.py").write_text("def main():\n    return 1\n", encoding="utf-8")
     map_result = subprocess.run(

@@ -91,7 +91,8 @@ Context saving is the main product direction. Visuals are the inspection and gam
 - `codeprism stats` for source, graph, and context-pack token estimates
 - `codeprism slice <path-or-symbol>` for targeted Markdown context packs
 - `codeprism prime <task>` as the one-command agent preflight: map, estimate, slice, then read the slice first
-- Prime and slice Markdown are capped to about 16K estimated tokens by default so the generated context artifact does not cause premature compaction
+- Prime and slice Markdown are capped to about 8K estimated tokens by default so the generated context artifact does not cause premature compaction
+- Slice budgets above 16K, including uncapped output, require explicit `--allow-large-context`
 - `codeprism prime <task> --changed` seeds context from changed, staged, and untracked Git files
 - `codeprism prime <task> --artifact-dir <dir> --readonly-root` supports read-only repos and CI artifact routing
 - `codeprism get <node-id>` prints exact source for a mapped file, doc, or symbol node

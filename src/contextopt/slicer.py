@@ -13,7 +13,8 @@ from .token_estimator import estimate_tokens
 
 FILE_KINDS = {"file", "doc"}
 SYMBOL_KINDS = {"class", "function", "heading", "method", "route"}
-DEFAULT_SLICE_MAX_TOKENS = 16_000
+DEFAULT_SLICE_MAX_TOKENS = 8_000
+MAX_SAFE_SLICE_TOKENS = 16_000
 
 
 def _node_row_id(row: dict[str, Any]) -> str:

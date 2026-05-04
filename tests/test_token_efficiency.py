@@ -5,7 +5,7 @@ from pathlib import Path
 from contextopt.graph import GraphStore
 from contextopt.gain import compute_gain, format_gain
 from contextopt.mapper import map_project
-from contextopt.slicer import export_slice
+from contextopt.slicer import DEFAULT_SLICE_MAX_TOKENS, export_slice
 from contextopt.stats import compute_stats
 from contextopt.token_estimator import estimate_tokens
 
@@ -175,6 +175,10 @@ def test_export_slice_caps_large_changed_context_by_default(tmp_path: Path) -> N
     assert result["omitted_node_count"] > 0
     assert "This slice was capped" in text
     assert '"truncated": true' in out.with_suffix(".json").read_text(encoding="utf-8")
+
+
+def test_default_slice_budget_stays_small_for_agent_context() -> None:
+    assert DEFAULT_SLICE_MAX_TOKENS <= 8_000
 
 
 def test_export_slice_ignores_unmapped_seed_paths(tmp_path: Path) -> None:

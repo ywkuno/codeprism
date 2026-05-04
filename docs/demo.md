@@ -26,7 +26,7 @@ codeprism prime "current task" --changed
 ```
 
 The command prints source, full-context, and slice token estimates plus an estimated saving percentage.
-The generated Markdown slice is capped to about 16K estimated tokens by default. If the output says the slice was capped, use narrower `codeprism query`, `codeprism get`, `codeprism references`, or `codeprism read --mode signatures/diff` calls instead of immediately raising the budget.
+The generated Markdown slice is capped to about 8K estimated tokens by default. Budgets above 16K, including uncapped output, require `--allow-large-context`. If the output says the slice was capped, use narrower `codeprism query`, `codeprism get`, `codeprism references`, or `codeprism read --mode signatures/diff` calls instead of immediately raising the budget.
 Map refreshes use a local `context.lock` file beside the graph database, so two agents do not rewrite the same map at once. If you only want to refresh when the map is stale, run:
 
 ```bash
