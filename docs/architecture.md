@@ -39,6 +39,8 @@ SQLite tables:
 - `edges`: contains, imports, calls, links, defines
 - `runs`: scan metadata
 
+Map writes are guarded by an inspectable `context.lock` file beside the active database. The lock keeps concurrent agents from clearing and rebuilding the same graph at the same time. If a lock is abandoned, CodePrism can replace it after a stale-lock timeout.
+
 ### Context pack
 
 A compact Markdown export with project overview, important files, symbols, edges, docs headings, and agent notes.
@@ -54,3 +56,4 @@ The default path is local-only. LLM summarization is optional and must be opt-in
 3. Read only high-relevance files.
 4. Export a small context pack.
 5. Let the agent request deeper slices when needed.
+6. During active work, use `codeprism watch . --once` or freshness-aware `--refresh` reads to keep the map aligned with the repo.

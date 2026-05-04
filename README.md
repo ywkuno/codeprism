@@ -48,6 +48,8 @@ Agents waste context when they brute-read file trees, repeated shell output, gen
 - Estimates context size and creates targeted Markdown slices for focused work.
 - Reports estimated saved tokens and stale-map status with `codeprism gain`.
 - Warns when context-reading commands see a stale map, with `--refresh` and `--strict-fresh` for enforced freshness.
+- Serializes map refreshes with an inspectable `context.lock` file so concurrent agents do not rewrite the graph at the same time.
+- Provides `codeprism watch` for lightweight polling refresh loops during active multi-agent work.
 - Writes local project memory with `codeprism onboard` and `codeprism memory`.
 - Produces reproducible savings reports with `codeprism benchmark`.
 - Routes generated artifacts outside a target repo with `--artifact-dir` and `--readonly-root`.
@@ -65,6 +67,7 @@ The core loop is usable today:
 - map a repository into a local SQLite graph
 - estimate context size and generate focused slices
 - check whether the graph is stale before trusting map output
+- keep the graph current with refresh locks and `codeprism watch --once` or a polling watch loop
 - expose core context tools through an optional MCP server
 - install and verify Codex/Claude/Copilot helpers that nudge agents toward slice-first exploration
 - export Markdown, JSON, DOT, and static HTML views
@@ -149,6 +152,8 @@ The viewer activity panel includes local event search, run/agent filters, jump-t
 | --- | --- |
 | `codeprism init` | Create a local `.codeprism/config.toml` file. |
 | `codeprism map .` | Scan the repo and update the SQLite graph. |
+| `codeprism watch . --once` | Refresh the graph only when the current map is stale. |
+| `codeprism watch .` | Poll for changes and refresh the graph with a local map lock. |
 | `codeprism export --format md` | Export a Markdown context pack. |
 | `codeprism export --format json` | Export stable graph JSON. |
 | `codeprism export --format dot` | Export DOT graph data. |
@@ -158,6 +163,7 @@ The viewer activity panel includes local event search, run/agent filters, jump-t
 | `codeprism visualize --outdir <dir>` | Generate a static browser viewer and auto-load `.codeprism/live-trace.jsonl` when present. |
 | `--refresh` | Incrementally refresh the map before a context-consuming command. |
 | `--strict-fresh` | Fail when the map is stale instead of warning. |
+| `--lock-timeout <seconds>` | Wait for another map refresh before failing with a lock error. |
 | `codeprism get <node-id>` | Print exact source for a mapped file, doc, or symbol node. |
 | `codeprism references <node-id>` | Show incoming and outgoing graph references for a node. |
 | `codeprism read <path> --mode map` | Print mapped nodes for a file without source bodies. |
@@ -204,12 +210,14 @@ The assistant should read the slice first, then verify important details in raw 
 To keep context consistent as the repo evolves, use freshness-aware reads:
 
 ```bash
+codeprism watch . --once
 codeprism read src/app.py --mode signatures --refresh
 codeprism get function::src/app.py::billing_webhook --strict-fresh
 codeprism visualize --refresh --outdir .codeprism/visual
 ```
 
-Context-consuming commands warn when the map is stale. Use `--refresh` to incrementally remap before serving context, or `--strict-fresh` in CI/agent guardrails to fail instead of reading stale graph state.
+Context-consuming commands warn when the map is stale. Use `--refresh` to incrementally remap before serving context, `codeprism watch . --once` when an agent wants to refresh only if needed, or `--strict-fresh` in CI/agent guardrails to fail instead of reading stale graph state.
+Map-writing commands use a local `context.lock` file beside the graph database. If another agent is already refreshing, CodePrism waits up to `--lock-timeout` seconds and exits with code `4` if the lock remains.
 
 For a repository that should not receive generated files, use:
 
@@ -269,6 +277,7 @@ pip install -e ".[dev]"
 pytest
 ruff check .
 codeprism map .
+codeprism watch . --once
 codeprism export --format json --out .codeprism/context-pack.json
 codeprism read README.md --mode signatures
 codeprism get "heading::README.md::Quick Start"

@@ -26,6 +26,13 @@ codeprism prime "current task" --changed
 ```
 
 The command prints source, full-context, and slice token estimates plus an estimated saving percentage.
+Map refreshes use a local `context.lock` file beside the graph database, so two agents do not rewrite the same map at once. If you only want to refresh when the map is stale, run:
+
+```bash
+codeprism watch . --once
+```
+
+For longer active sessions, `codeprism watch .` polls for changes and refreshes with the same lock.
 
 For a read-only checkout or a CI smoke run, keep artifacts outside the target repo:
 
@@ -40,6 +47,7 @@ Replace `PATH_TO_REPO` and `PATH_TO_ARTIFACTS` with normal project and output pa
 ```bash
 codeprism stats
 codeprism gain
+codeprism watch . --once
 codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
 ```
 

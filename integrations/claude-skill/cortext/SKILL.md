@@ -49,6 +49,7 @@ codeprism read PATH --mode diff
 5. If a context command warns that the map is stale, refresh before trusting the graph:
 
 ```bash
+codeprism watch . --once
 codeprism read PATH --mode signatures --refresh
 codeprism get NODE_ID --strict-fresh
 ```
@@ -88,6 +89,8 @@ When `.codeprism/live-trace.jsonl` exists, `codeprism visualize` auto-loads it f
 - Prefer deterministic context pack facts over guesses.
 - If the map is stale, refresh it.
 - Prefer `--refresh` for normal stale-map recovery and `--strict-fresh` when stale context should fail the command.
+- Prefer `codeprism watch . --once` when you need to refresh only if the current map is stale.
+- Respect CodePrism lock failures: another agent may be mapping, so wait or retry instead of deleting `context.lock` unless you are sure it is abandoned.
 - Use `codeprism gain` when you need to confirm estimated savings or map freshness.
 - Use `codeprism references` before broad search when a mapped node is central to the task.
 - Do not send private project files to external APIs.
