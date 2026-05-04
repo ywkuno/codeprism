@@ -22,6 +22,7 @@ pip install -e ".[dev]"
 pytest
 codeprism init
 codeprism map .
+codeprism watch . --once
 codeprism export --format md --out .codeprism/context-pack.md
 codeprism export --format json --out .codeprism/context-pack.json
 codeprism read README.md --mode signatures
@@ -88,6 +89,8 @@ Then inspect generated files under `.codeprism/`.
 - `codeprism get <node-id>` prints exact source for mapped file, doc, and symbol nodes, using stable node IDs from slices, query results, or graph JSON.
 - `codeprism read <path> --mode map|signatures|diff|full` lets agents inspect file shape, symbols, or one-file diffs before explicitly reading full files.
 - Context-consuming commands warn when the map is stale. Use `--refresh` to incrementally update first, or `--strict-fresh` to fail instead of reading stale graph state.
+- Map refreshes are serialized by an inspectable `context.lock` beside the graph DB; lock timeouts exit with code 4 instead of producing tracebacks.
+- `codeprism watch . --once` refreshes only stale maps, and `codeprism watch .` can run as a lightweight polling loop during active multi-agent work.
 - `codeprism gain` reports estimated saved tokens and warns when files changed after the latest map.
 - `codeprism references <node-id>` reports incoming and outgoing graph references.
 - `codeprism onboard` and `codeprism memory` manage inspectable local project memory under `.codeprism/memory/`.

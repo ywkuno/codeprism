@@ -20,6 +20,7 @@ pip install -e ".[dev]"
 pytest
 ruff check .
 codeprism map .
+codeprism watch . --once
 codeprism export --format md --out .codeprism/context-pack.md
 codeprism export --format json --out .codeprism/context-pack.json
 codeprism read README.md --mode signatures

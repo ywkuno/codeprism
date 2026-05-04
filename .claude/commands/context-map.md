@@ -7,6 +7,7 @@ Run:
 ```bash
 codeprism init
 codeprism map .
+codeprism watch . --once
 codeprism stats
 codeprism gain
 codeprism mcp --list-tools

@@ -98,6 +98,8 @@ Context saving is the main product direction. Visuals are the inspection and gam
 - `codeprism references <node-id>` reports incoming and outgoing graph references
 - `codeprism gain` reports estimated saved tokens and stale-map status
 - Context-consuming commands warn on stale maps; `--refresh` incrementally remaps first and `--strict-fresh` fails instead of reading stale graph state
+- Map-writing commands use a local inspectable `context.lock` so concurrent agents do not rewrite the graph at the same time
+- `codeprism watch . --once` refreshes only when stale; `codeprism watch .` provides a lightweight polling feedback loop for active sessions
 - `codeprism onboard` and `codeprism memory` create inspectable local project memory
 - `codeprism benchmark` writes reproducible local token-savings reports
 - `codeprism mcp --list-tools` exposes the experimental MCP tool surface; `codeprism mcp` runs the optional SDK-backed server
@@ -113,6 +115,7 @@ Context saving is the main product direction. Visuals are the inspection and gam
 - Broad deterministic fallback for common non-Python languages, with honest limitations
 - Honest estimated token reporting rather than benchmark claims
 - Next: rank slices by call graph signals, richer docs mentions, recent activity, and per-language ownership hints
+- Next: add an optional CI freshness check that runs `codeprism watch . --once` plus `codeprism gain`
 - Next: add staged-diff support to `codeprism read --mode diff`
 - Next: improve read signatures with language-aware argument/type summaries where deterministic parsers support them
 - Next: expand MCP resources/prompts and document client setup for Codex, Claude, and other MCP clients

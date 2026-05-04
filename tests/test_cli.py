@@ -126,8 +126,7 @@ def test_export_default_reads_legacy_contextopt_db(tmp_path: Path):
 def test_activity_normalize_command_writes_safe_payload(tmp_path: Path):
     activity = tmp_path / "activity.jsonl"
     activity.write_text(
-        '{"agent_id":"codex","event":"file_read","path":"app.py","estimated_tokens":42}\n'
-        "bad row\n",
+        '{"agent_id":"codex","event":"file_read","path":"app.py","estimated_tokens":42}\nbad row\n',
         encoding="utf-8",
     )
     out = tmp_path / ".contextopt" / "activity-stream.json"
@@ -307,8 +306,7 @@ def test_get_strict_fresh_fails_when_map_is_stale(tmp_path: Path):
 
 def test_read_map_mode_prints_file_metadata_without_source_body(tmp_path: Path):
     (tmp_path / "app.py").write_text(
-        "def target():\n"
-        "    return 'body should stay hidden'\n",
+        "def target():\n    return 'body should stay hidden'\n",
         encoding="utf-8",
     )
     db = tmp_path / ".contextopt" / "context.db"
@@ -347,7 +345,9 @@ def test_read_map_mode_prints_file_metadata_without_source_body(tmp_path: Path):
     assert "body should stay hidden" not in result.stdout
     trace_rows = [
         json.loads(line)
-        for line in (tmp_path / ".codeprism" / "live-trace.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / ".codeprism" / "live-trace.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
     ]
     assert trace_rows[-1]["event"] == "read_map"
     assert trace_rows[-1]["path"] == "app.py"
@@ -391,6 +391,128 @@ def test_read_refresh_updates_stale_map_before_signatures(tmp_path: Path):
     assert "new_name" in result.stdout
     assert "old_name" not in result.stdout
     assert "CodePrism map is stale" not in result.stderr
+
+
+def test_map_command_fails_cleanly_when_lock_is_held(tmp_path: Path):
+    (tmp_path / "app.py").write_text("def main():\n    return 1\n", encoding="utf-8")
+    codeprism = tmp_path / ".codeprism"
+    codeprism.mkdir()
+    (codeprism / "context.lock").write_text('{"reason":"test"}', encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "contextopt.cli",
+            "map",
+            str(tmp_path),
+            "--lock-timeout",
+            "0",
+            "--lock-stale-after",
+            "60",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 4
+    assert "CodePrism map is locked" in result.stderr
+    assert not (tmp_path / ".codeprism" / "context.db").exists()
+
+
+def test_watch_once_refreshes_stale_map(tmp_path: Path):
+    app = tmp_path / "app.py"
+    app.write_text("def old_name():\n    return 1\n", encoding="utf-8")
+    db = tmp_path / ".contextopt" / "context.db"
+    map_result = subprocess.run(
+        [sys.executable, "-m", "contextopt.cli", "map", str(tmp_path), "--db", str(db)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert map_result.returncode == 0, map_result.stderr
+    app.write_text("def new_name():\n    return 2\n", encoding="utf-8")
+
+    watch_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "contextopt.cli",
+            "watch",
+            str(tmp_path),
+            "--db",
+            str(db),
+            "--once",
+            "--interval",
+            "0",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert watch_result.returncode == 0, watch_result.stderr
+    assert "Refreshed CodePrism map" in watch_result.stdout
+
+    read_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "contextopt.cli",
+            "read",
+            "app.py",
+            "--mode",
+            "signatures",
+            "--root",
+            str(tmp_path),
+            "--db",
+            str(db),
+            "--strict-fresh",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert read_result.returncode == 0, read_result.stderr
+    assert "new_name" in read_result.stdout
+    assert "old_name" not in read_result.stdout
+
+
+def test_read_refresh_fails_cleanly_when_map_is_locked(tmp_path: Path):
+    (tmp_path / "app.py").write_text("def main():\n    return 1\n", encoding="utf-8")
+    db = tmp_path / ".contextopt" / "context.db"
+    db.parent.mkdir()
+    (db.parent / "context.lock").write_text('{"reason":"test"}', encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "contextopt.cli",
+            "read",
+            "app.py",
+            "--mode",
+            "signatures",
+            "--root",
+            str(tmp_path),
+            "--db",
+            str(db),
+            "--refresh",
+            "--lock-timeout",
+            "0",
+            "--lock-stale-after",
+            "60",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 4
+    assert "CodePrism map is locked" in result.stderr
+    assert "Traceback" not in result.stderr
 
 
 def test_read_signatures_mode_prints_symbols_without_function_bodies(tmp_path: Path):
@@ -587,7 +709,9 @@ def test_gain_command_appends_live_trace_freshness_metadata(tmp_path: Path):
     assert result.returncode == 0, result.stderr
     trace_rows = [
         json.loads(line)
-        for line in (tmp_path / ".codeprism" / "live-trace.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / ".codeprism" / "live-trace.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
     ]
     gain_event = trace_rows[-1]
     assert gain_event["event"] == "gain"
