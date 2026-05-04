@@ -13,6 +13,7 @@ from .token_estimator import estimate_tokens
 
 FILE_KINDS = {"file", "doc"}
 SYMBOL_KINDS = {"class", "function", "heading", "method", "route"}
+DEFAULT_SLICE_MAX_TOKENS = 16_000
 
 
 def _node_row_id(row: dict[str, Any]) -> str:
@@ -149,6 +150,153 @@ def _node_ids_for_paths(
     }
 
 
+def _ordered_nodes_for_slice(
+    selected_nodes: list[dict[str, Any]],
+    matched_ids: set[str],
+) -> list[dict[str, Any]]:
+    def key(node: dict[str, Any]) -> tuple[int, str, str, str]:
+        node_id = _node_row_id(node)
+        if node_id in matched_ids:
+            priority = 0
+        elif node["kind"] in FILE_KINDS:
+            priority = 1
+        elif node["kind"] in SYMBOL_KINDS:
+            priority = 2
+        else:
+            priority = 3
+        return (priority, str(node["path"]), str(node["kind"]), str(node["name"]))
+
+    return sorted(selected_nodes, key=key)
+
+
+def _slice_lines(
+    *,
+    query: str,
+    matched_count: int,
+    nodes: list[dict[str, Any]],
+    edges: list[dict[str, Any]],
+    seeded_path_count: int,
+    omitted_node_count: int = 0,
+    omitted_edge_count: int = 0,
+    max_tokens: int | None = None,
+) -> list[str]:
+    lines = [
+        "# CodePrism Slice",
+        "",
+        f"- Query: `{query}`",
+        f"- Matched nodes: {matched_count}",
+        f"- Written nodes: {len(nodes)}",
+        f"- Direct edges: {len(edges)}",
+        f"- Seeded paths: {seeded_path_count}",
+    ]
+    if max_tokens and (omitted_node_count or omitted_edge_count):
+        lines.extend(
+            [
+                f"- Token budget: {max_tokens}",
+                f"- Omitted nodes: {omitted_node_count}",
+                f"- Omitted edges: {omitted_edge_count}",
+            ]
+        )
+    lines.extend(["", "## Nodes", ""])
+    for node in nodes:
+        node_id = _node_row_id(node)
+        loc = f":L{node['start_line']}" if node["start_line"] else ""
+        lines.append(f"- `{node_id}` — {node['kind']} `{node['path']}{loc}` **{node['name']}**")
+
+    lines += ["", "## Direct Edges", ""]
+    for edge in edges:
+        lines.append(f"- `{edge['source']}` --{edge['kind']}--> `{edge['target']}`")
+
+    if omitted_node_count or omitted_edge_count:
+        lines.extend(
+            [
+                "",
+                "## Omitted",
+                "",
+                (
+                    f"This slice was capped to keep agent context small. "
+                    f"Omitted {omitted_node_count} nodes and {omitted_edge_count} edges. "
+                    "Use `codeprism query`, `codeprism get`, or `codeprism references` for more."
+                ),
+            ]
+        )
+    return lines
+
+
+def _fit_slice_budget(
+    *,
+    query: str,
+    matched_count: int,
+    selected_nodes: list[dict[str, Any]],
+    selected_edges: list[dict[str, Any]],
+    matched_ids: set[str],
+    seeded_path_count: int,
+    max_tokens: int | None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool, int]:
+    if not max_tokens or max_tokens <= 0:
+        return selected_nodes, selected_edges, False, 0
+
+    full_lines = _slice_lines(
+        query=query,
+        matched_count=matched_count,
+        nodes=selected_nodes,
+        edges=selected_edges,
+        seeded_path_count=seeded_path_count,
+        max_tokens=max_tokens,
+    )
+    full_estimate = estimate_tokens("\n".join(full_lines) + "\n")
+    if full_estimate <= max_tokens:
+        return selected_nodes, selected_edges, False, full_estimate
+
+    kept_nodes: list[dict[str, Any]] = []
+    for node in _ordered_nodes_for_slice(selected_nodes, matched_ids):
+        candidate_nodes = [*kept_nodes, node]
+        candidate_node_ids = {_node_row_id(candidate) for candidate in candidate_nodes}
+        candidate_edges = [
+            edge
+            for edge in selected_edges
+            if edge["source"] in candidate_node_ids and edge["target"] in candidate_node_ids
+        ]
+        candidate_lines = _slice_lines(
+            query=query,
+            matched_count=matched_count,
+            nodes=candidate_nodes,
+            edges=[],
+            seeded_path_count=seeded_path_count,
+            omitted_node_count=len(selected_nodes) - len(candidate_nodes),
+            omitted_edge_count=len(selected_edges) - len(candidate_edges),
+            max_tokens=max_tokens,
+        )
+        if estimate_tokens("\n".join(candidate_lines) + "\n") > max_tokens:
+            if kept_nodes:
+                continue
+            kept_nodes.append(node)
+            break
+        kept_nodes = candidate_nodes
+
+    kept_node_ids = {_node_row_id(node) for node in kept_nodes}
+    kept_edges: list[dict[str, Any]] = []
+    for edge in selected_edges:
+        if edge["source"] not in kept_node_ids or edge["target"] not in kept_node_ids:
+            continue
+        candidate_edges = [*kept_edges, edge]
+        candidate_lines = _slice_lines(
+            query=query,
+            matched_count=matched_count,
+            nodes=kept_nodes,
+            edges=candidate_edges,
+            seeded_path_count=seeded_path_count,
+            omitted_node_count=len(selected_nodes) - len(kept_nodes),
+            omitted_edge_count=len(selected_edges) - len(candidate_edges),
+            max_tokens=max_tokens,
+        )
+        if estimate_tokens("\n".join(candidate_lines) + "\n") > max_tokens:
+            continue
+        kept_edges = candidate_edges
+
+    return kept_nodes, kept_edges, True, full_estimate
+
+
 def _neighbor_ids(seed_ids: set[str], edges: list[dict[str, Any]]) -> set[str]:
     neighbors: set[str] = set()
     for edge in edges:
@@ -237,13 +385,21 @@ def export_slice(
     *,
     limit: int = 12,
     seed_paths: Sequence[str] | None = None,
+    max_tokens: int | None = DEFAULT_SLICE_MAX_TOKENS,
 ) -> dict[str, Any]:
     matches = query_graph(store, query, limit)
     nodes_by_id = _nodes_by_id(store)
     edges = _resolve_edges(_edge_rows(store), nodes_by_id)
     all_nodes = list(nodes_by_id.values())
     selected_ids = {_node_row_id(match) for match in matches}
-    normalized_seed_paths = sorted({_normalize_rel_path(path) for path in seed_paths or [] if path})
+    all_node_paths = {_normalize_rel_path(str(node["path"])) for node in nodes_by_id.values()}
+    normalized_seed_paths = sorted(
+        {
+            normalized
+            for path in seed_paths or []
+            if (normalized := _normalize_rel_path(path)) in all_node_paths
+        }
+    )
     selected_ids.update(_node_ids_for_paths(nodes_by_id, normalized_seed_paths))
     matched_ids = set(selected_ids)
 
@@ -256,31 +412,34 @@ def export_slice(
         nodes_by_id[node_id] for node_id in sorted(selected_ids) if node_id in nodes_by_id
     ]
     selected_edges = [
-        edge
-        for edge in edges
-        if edge["source"] in selected_ids or edge["target"] in selected_ids
+        edge for edge in edges if edge["source"] in selected_ids and edge["target"] in selected_ids
     ]
 
-    lines = [
-        "# CodePrism Slice",
-        "",
-        f"- Query: `{query}`",
-        f"- Matched nodes: {len(matched_ids)}",
-        f"- Written nodes: {len(selected_nodes)}",
-        f"- Direct edges: {len(selected_edges)}",
-        f"- Seeded paths: {len(normalized_seed_paths)}",
-        "",
-        "## Nodes",
-        "",
-    ]
-    for node in selected_nodes:
-        node_id = _node_row_id(node)
-        loc = f":L{node['start_line']}" if node["start_line"] else ""
-        lines.append(f"- `{node_id}` — {node['kind']} `{node['path']}{loc}` **{node['name']}**")
-
-    lines += ["", "## Direct Edges", ""]
-    for edge in selected_edges:
-        lines.append(f"- `{edge['source']}` --{edge['kind']}--> `{edge['target']}`")
+    original_node_count = len(selected_nodes)
+    original_edge_count = len(selected_edges)
+    selected_nodes, selected_edges, truncated, untruncated_estimated_tokens = _fit_slice_budget(
+        query=query,
+        matched_count=len(matched_ids),
+        selected_nodes=selected_nodes,
+        selected_edges=selected_edges,
+        matched_ids=matched_ids,
+        seeded_path_count=len(normalized_seed_paths),
+        max_tokens=max_tokens,
+    )
+    selected_ids = {_node_row_id(node) for node in selected_nodes}
+    matched_ids = matched_ids & selected_ids
+    omitted_node_count = original_node_count - len(selected_nodes)
+    omitted_edge_count = original_edge_count - len(selected_edges)
+    lines = _slice_lines(
+        query=query,
+        matched_count=len(matched_ids),
+        nodes=selected_nodes,
+        edges=selected_edges,
+        seeded_path_count=len(normalized_seed_paths),
+        omitted_node_count=omitted_node_count,
+        omitted_edge_count=omitted_edge_count,
+        max_tokens=max_tokens,
+    )
 
     text = "\n".join(lines) + "\n"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -304,8 +463,15 @@ def export_slice(
         "estimated_tokens": estimated_tokens,
         "full_context_estimated_tokens": full_context_tokens,
         "estimated_token_ratio": ratio,
+        "max_tokens": max_tokens,
+        "truncated": truncated,
+        "untruncated_estimated_tokens": untruncated_estimated_tokens,
+        "omitted_node_count": omitted_node_count,
+        "omitted_edge_count": omitted_edge_count,
     }
-    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return {
         "query": query,
         "matched_nodes": len(matched_ids),
@@ -319,6 +485,11 @@ def export_slice(
         "estimated_tokens": estimated_tokens,
         "full_context_estimated_tokens": full_context_tokens,
         "estimated_token_ratio": ratio,
+        "max_tokens": max_tokens,
+        "truncated": truncated,
+        "untruncated_estimated_tokens": untruncated_estimated_tokens,
+        "omitted_node_count": omitted_node_count,
+        "omitted_edge_count": omitted_edge_count,
         "out": str(out),
         "manifest": str(manifest_path),
     }

@@ -34,7 +34,7 @@ from .query import query_graph
 from .read_modes import ReadError, format_read_result, read_path
 from .references import ReferencesError, find_references, format_references
 from .retrieval import RetrievalError, format_retrieved_source, retrieve_source
-from .slicer import default_slice_path, export_slice
+from .slicer import DEFAULT_SLICE_MAX_TOKENS, default_slice_path, export_slice
 from .stats import compute_stats, format_stats
 
 
@@ -165,6 +165,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Refuse to write generated artifacts inside --root.",
     )
     p_prime.add_argument("--limit", type=int, default=12)
+    p_prime.add_argument(
+        "--max-tokens",
+        type=int,
+        default=DEFAULT_SLICE_MAX_TOKENS,
+        help="Approximate maximum tokens for the generated slice markdown. Use 0 for no cap.",
+    )
     p_prime.add_argument("--max-file-bytes", type=int)
     p_prime.add_argument("--ignore", action="append", default=[])
     _add_lock_args(p_prime)
@@ -178,6 +184,12 @@ def main(argv: list[str] | None = None) -> int:
     p_slice.add_argument("--db")
     p_slice.add_argument("--out")
     p_slice.add_argument("--limit", type=int, default=12)
+    p_slice.add_argument(
+        "--max-tokens",
+        type=int,
+        default=DEFAULT_SLICE_MAX_TOKENS,
+        help="Approximate maximum tokens for the generated slice markdown. Use 0 for no cap.",
+    )
     p_slice.add_argument(
         "--path", action="append", default=[], help="Seed the slice with a file path."
     )
@@ -762,6 +774,7 @@ def main(argv: list[str] | None = None) -> int:
             out,
             limit=args.limit,
             seed_paths=changed_paths,
+            max_tokens=args.max_tokens,
         )
         stats = compute_stats(root, store)
         source_tokens = stats["source_estimated_tokens"]
@@ -781,6 +794,11 @@ def main(argv: list[str] | None = None) -> int:
             f"Included: {slice_result['file_count']} files, "
             f"{slice_result['symbol_count']} symbols, {slice_result['direct_edges']} edges."
         )
+        if slice_result.get("truncated"):
+            print(
+                f"Slice budget: capped at ~{slice_result['max_tokens']} tokens "
+                f"(uncapped estimate ~{slice_result['untruncated_estimated_tokens']})."
+            )
         if args.changed:
             print(f"Changed files: {len(changed_paths)}")
         print("Read this slice first, then open only the raw files it identifies.")
@@ -833,6 +851,7 @@ def main(argv: list[str] | None = None) -> int:
             out,
             limit=args.limit,
             seed_paths=args.path,
+            max_tokens=args.max_tokens,
         )
         print(
             f"Wrote {result['out']} "

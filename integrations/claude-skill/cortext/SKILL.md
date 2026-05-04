@@ -17,6 +17,8 @@ CodePrism's main job is context saving and token optimization. The visual map is
 codeprism prime "topic, file, symbol, or bug"
 ```
 
+Keep the topic narrow. The generated Markdown slice is capped to about 16K estimated tokens by default; do not raise `--limit` or `--max-tokens` unless the user explicitly asks or the current task genuinely needs broader context.
+
 For work already in progress, include changed files:
 
 ```bash
@@ -31,6 +33,7 @@ codeprism prime "topic, file, symbol, or bug" --root PATH_TO_REPO --artifact-dir
 
 2. Read the generated slice Markdown first. By default it is under `.codeprism/slices/`; with `--artifact-dir`, it is under that artifact directory.
    CodePrism also writes a local Live Trace event to `.codeprism/live-trace.jsonl`, or to `<artifact-dir>/live-trace.jsonl` when `--artifact-dir` is used.
+   If the prime output says the slice was capped, do not dump the full slice into the conversation. Use the slice as an index and move to targeted `query`, `get`, `references`, or `read` commands.
 3. Use exact retrieval for specific mapped nodes before opening whole raw files:
 
 ```bash
@@ -97,5 +100,7 @@ When `.codeprism/live-trace.jsonl` exists, `codeprism visualize` auto-loads it f
 - Ask for raw files only after consulting the slice, map, `codeprism get`, or `codeprism read --mode signatures/diff` output.
 - Treat token counts as estimates, not billing-grade measurements.
 - Prefer `--changed` when there are local edits, staged changes, or new files.
+- Prefer narrow task queries over compound multi-feature queries.
+- Treat `--limit 40` or high `--max-tokens` as exceptional; these can erase the token savings.
 - Use `--artifact-dir` and `--readonly-root` when the target repository must stay untouched.
 - Treat Live Trace as a local audit aid, not as proof of exact model billing tokens.

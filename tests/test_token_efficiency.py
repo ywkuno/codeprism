@@ -51,15 +51,11 @@ def test_compute_stats_reports_stale_map_after_file_change(tmp_path: Path) -> No
 
 def test_compute_gain_reports_source_context_and_slice_savings(tmp_path: Path) -> None:
     (tmp_path / "app.py").write_text(
-        "import helpers\n\n"
-        "def main():\n"
-        "    return helpers.greet()\n",
+        "import helpers\n\ndef main():\n    return helpers.greet()\n",
         encoding="utf-8",
     )
     (tmp_path / "helpers.py").write_text(
-        "def greet():\n"
-        f"    notes = {['verbose source body'] * 120!r}\n"
-        "    return 'hi'\n",
+        f"def greet():\n    notes = {['verbose source body'] * 120!r}\n    return 'hi'\n",
         encoding="utf-8",
     )
     store = GraphStore(tmp_path / ".contextopt" / "context.db")
@@ -80,14 +76,11 @@ def test_compute_gain_reports_source_context_and_slice_savings(tmp_path: Path) -
 
 def test_export_slice_writes_matching_nodes_and_neighbors(tmp_path: Path) -> None:
     (tmp_path / "app.py").write_text(
-        "import helpers\n\n"
-        "def main():\n"
-        "    return helpers.greet()\n",
+        "import helpers\n\ndef main():\n    return helpers.greet()\n",
         encoding="utf-8",
     )
     (tmp_path / "helpers.py").write_text(
-        "def greet():\n"
-        "    return 'hi'\n",
+        "def greet():\n    return 'hi'\n",
         encoding="utf-8",
     )
     store = GraphStore(tmp_path / ".contextopt" / "context.db")
@@ -114,19 +107,15 @@ def test_export_slice_includes_local_imports_and_related_tests(tmp_path: Path) -
     (tmp_path / "src").mkdir()
     (tmp_path / "tests").mkdir()
     (tmp_path / "src" / "app.py").write_text(
-        "import src.helpers\n\n"
-        "def main():\n"
-        "    return src.helpers.greet()\n",
+        "import src.helpers\n\ndef main():\n    return src.helpers.greet()\n",
         encoding="utf-8",
     )
     (tmp_path / "src" / "helpers.py").write_text(
-        "def greet():\n"
-        "    return 'hi'\n",
+        "def greet():\n    return 'hi'\n",
         encoding="utf-8",
     )
     (tmp_path / "tests" / "test_app.py").write_text(
-        "def test_main():\n"
-        "    assert True\n",
+        "def test_main():\n    assert True\n",
         encoding="utf-8",
     )
     store = GraphStore(tmp_path / ".contextopt" / "context.db")
@@ -145,8 +134,7 @@ def test_export_slice_includes_local_imports_and_related_tests(tmp_path: Path) -
 def test_export_slice_accepts_seed_paths_for_changed_files(tmp_path: Path) -> None:
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "feature.py").write_text(
-        "def changed_feature():\n"
-        "    return 1\n",
+        "def changed_feature():\n    return 1\n",
         encoding="utf-8",
     )
     store = GraphStore(tmp_path / ".contextopt" / "context.db")
@@ -158,4 +146,52 @@ def test_export_slice_accepts_seed_paths_for_changed_files(tmp_path: Path) -> No
     text = out.read_text(encoding="utf-8")
     assert "src/feature.py" in text
     assert "changed_feature" in text
+    assert result["seeded_paths"] == ["src/feature.py"]
+
+
+def test_export_slice_caps_large_changed_context_by_default(tmp_path: Path) -> None:
+    (tmp_path / "src").mkdir()
+    for index in range(60):
+        (tmp_path / "src" / f"feature_{index}.py").write_text(
+            f"def feature_{index}():\n    return {index}\n",
+            encoding="utf-8",
+        )
+    store = GraphStore(tmp_path / ".contextopt" / "context.db")
+    map_project(tmp_path, store)
+
+    out = tmp_path / ".contextopt" / "slices" / "large.md"
+    result = export_slice(
+        store,
+        "feature",
+        out,
+        limit=60,
+        seed_paths=[f"src/feature_{index}.py" for index in range(60)],
+        max_tokens=350,
+    )
+
+    text = out.read_text(encoding="utf-8")
+    assert result["truncated"] is True
+    assert result["estimated_tokens"] <= 350
+    assert result["omitted_node_count"] > 0
+    assert "This slice was capped" in text
+    assert '"truncated": true' in out.with_suffix(".json").read_text(encoding="utf-8")
+
+
+def test_export_slice_ignores_unmapped_seed_paths(tmp_path: Path) -> None:
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "feature.py").write_text(
+        "def changed_feature():\n    return 1\n",
+        encoding="utf-8",
+    )
+    store = GraphStore(tmp_path / ".contextopt" / "context.db")
+    map_project(tmp_path, store)
+
+    out = tmp_path / ".contextopt" / "slices" / "changed.md"
+    result = export_slice(
+        store,
+        "no textual match",
+        out,
+        seed_paths=["src/feature.py", ".contextopt/context.db", "assets/icon.png"],
+    )
+
     assert result["seeded_paths"] == ["src/feature.py"]
