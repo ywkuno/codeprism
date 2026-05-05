@@ -349,6 +349,64 @@ def test_benchmark_trend_script_uses_local_baseline_without_github(tmp_path: Pat
     assert "Tiny Fixture" in (outdir / "comparison.md").read_text(encoding="utf-8")
 
 
+def test_pre_release_proof_pack_uses_local_checks(tmp_path: Path) -> None:
+    fixtures = tmp_path / "fixtures"
+    fixture = fixtures / "tiny"
+    fixture.mkdir(parents=True)
+    (fixture / "benchmark.config.json").write_text(
+        json.dumps({"name": "Tiny Fixture", "query": "main"}),
+        encoding="utf-8",
+    )
+    (fixture / "app.py").write_text(
+        "def main():\n"
+        f"    notes = {['proof fixture body'] * 120!r}\n"
+        "    return len(notes)\n",
+        encoding="utf-8",
+    )
+    baseline = tmp_path / "baseline.json"
+    baseline.write_text(
+        json.dumps(
+            {
+                "summary": {"average_source_to_slice_saved_percent": 50.0},
+                "fixtures": [
+                    {
+                        "name": "Tiny Fixture",
+                        "source_estimated_tokens": 1000,
+                        "slice_estimated_tokens": 500,
+                        "source_to_slice_saved_percent": 50.0,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "proof"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/pre_release_proof.py",
+            "--baseline-suite",
+            str(baseline),
+            "--fixtures-root",
+            str(fixtures),
+            "--outdir",
+            str(outdir),
+            "--skip-tests",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = (outdir / "README.md").read_text(encoding="utf-8")
+    assert "All pre-release proof checks passed." in result.stdout
+    assert "benchmark-trend" in summary
+    assert (outdir / "session-audit.md").exists()
+    assert (outdir / "hygiene-scan.md").exists()
+
+
 def test_mcp_tool_specs_expose_core_context_tools() -> None:
     tool_names = {tool["name"] for tool in mcp_tool_specs()}
 
