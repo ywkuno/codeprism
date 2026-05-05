@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="842" viewBox="0 0 1200 842" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+<title id="title">CodePrism Benchmark Snapshot</title>
+<desc id="desc">A local-first benchmark chart showing estimated source-to-slice token reductions across CodePrism fixtures.</desc>
+<defs>
+<linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#071216"/><stop offset="1" stop-color="#101827"/></linearGradient>
+<linearGradient id="barSlice" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#42F5B3"/><stop offset="1" stop-color="#5AB8FF"/></linearGradient>
+<linearGradient id="barContext" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFD166"/><stop offset="1" stop-color="#FF5CA8"/></linearGradient>
+<pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" stroke="#203748" stroke-width="1" opacity="0.35"/></pattern>
+<pattern id="scan" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 7H8" stroke="#FFFFFF" stroke-width="1" opacity="0.035"/></pattern>
+</defs>
+<rect width="1200" height="842" rx="28" fill="url(#panel)"/>
+<rect width="1200" height="842" rx="28" fill="url(#grid)"/>
+<rect width="1200" height="842" rx="28" fill="url(#scan)"/>
+<rect x="34" y="34" width="1132" height="164" rx="20" fill="#0C1720" stroke="#28445A"/>
+<text x="62" y="78" fill="#42F5B3" font-size="18" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">CODEPRISM BENCHMARK SNAPSHOT</text>
+<text x="62" y="124" fill="#E9F4FF" font-size="35" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="800">Source to focused slices</text>
+<text x="64" y="163" fill="#9BB0C8" font-size="20" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">Fixture data is reproducible and local. Token counts are estimates.</text>
+<rect x="640" y="65" width="150" height="92" rx="16" fill="#111F2A" stroke="#28445A"/>
+<text x="656" y="97" fill="#9BB0C8" font-size="11" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">AVG SOURCE -&gt; SLICE</text>
+<text x="656" y="133" fill="#42F5B3" font-size="28" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="800">68.75%</text>
+<rect x="815" y="65" width="150" height="92" rx="16" fill="#111F2A" stroke="#28445A"/>
+<text x="831" y="97" fill="#9BB0C8" font-size="11" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">TOTAL SOURCE -&gt; SLICE</text>
+<text x="831" y="133" fill="#5AB8FF" font-size="28" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="800">68.60%</text>
+<rect x="990" y="65" width="150" height="92" rx="16" fill="#111F2A" stroke="#28445A"/>
+<text x="1006" y="97" fill="#9BB0C8" font-size="11" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">FIXTURES / FILES</text>
+<text x="1006" y="133" fill="#FFD166" font-size="28" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="800">8 / 40</text>
+<text x="66" y="235" fill="#9BB0C8" font-size="15" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Fixture</text>
+<text x="355" y="235" fill="#9BB0C8" font-size="15" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Estimated tokens by fixture</text>
+<text x="1002" y="235" fill="#9BB0C8" font-size="15" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Saved</text>
+<text x="1088" y="235" fill="#9BB0C8" font-size="15" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Pack</text>
+<rect x="52" y="235" width="1096" height="40" rx="10" fill="#0A151D" opacity="0.68"/>
+<text x="66" y="260" fill="#E9F4FF" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Basic Java</text>
+<text x="258" y="260" fill="#8298B0" font-size="13" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">5 files</text>
+<rect x="355" y="246" width="237" height="12" rx="6" fill="#254B63"/>
+<rect x="355" y="263" width="110" height="12" rx="6" fill="url(#barSlice)"/>
+<line x1="355" y1="241" x2="355" y2="281" stroke="#FF5CA8" stroke-width="2"/>
+<circle cx="355" cy="282" r="4" fill="#FF5CA8"/>
+<text x="989" y="262" fill="#42F5B3" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">53.46%</text>
+<text x="1077" y="262" fill="#FFD166" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">0.00%</text>
+<text x="600" y="255" fill="#9BB0C8" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">1.1K</text>
+<text x="473" y="273" fill="#BFE9FF" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">524</text>
+<rect x="52" y="289" width="1096" height="40" rx="10" fill="#0A151D" opacity="0.68"/>
+<text x="66" y="314" fill="#E9F4FF" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Basic Kotlin</text>
+<text x="258" y="314" fill="#8298B0" font-size="13" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">4 files</text>
+<rect x="355" y="300" width="240" height="12" rx="6" fill="#254B63"/>
+<rect x="355" y="317" width="93" height="12" rx="6" fill="url(#barSlice)"/>
+<line x1="436" y1="295" x2="436" y2="335" stroke="#FF5CA8" stroke-width="2"/>
+<circle cx="436" cy="336" r="4" fill="#FF5CA8"/>
+<text x="989" y="316" fill="#42F5B3" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">61.19%</text>
+<text x="1077" y="316" fill="#FFD166" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">13.26%</text>
+<text x="603" y="309" fill="#9BB0C8" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">1.1K</text>
+<text x="456" y="327" fill="#BFE9FF" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">442</text>
+<rect x="52" y="343" width="1096" height="40" rx="10" fill="#0A151D" opacity="0.68"/>
+<text x="66" y="368" fill="#E9F4FF" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Basic Python</text>
+<text x="258" y="368" fill="#8298B0" font-size="13" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">5 files</text>
+<rect x="355" y="354" width="266" height="12" rx="6" fill="#254B63"/>
+<rect x="355" y="371" width="36" height="12" rx="6" fill="url(#barSlice)"/>
+<line x1="784" y1="349" x2="784" y2="389" stroke="#FF5CA8" stroke-width="2"/>
+<circle cx="784" cy="390" r="4" fill="#FF5CA8"/>
+<text x="989" y="370" fill="#42F5B3" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">86.38%</text>
+<text x="1077" y="370" fill="#FFD166" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">70.39%</text>
+<text x="629" y="363" fill="#9BB0C8" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">1.3K</text>
+<text x="399" y="381" fill="#BFE9FF" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">172</text>
+<rect x="52" y="397" width="1096" height="40" rx="10" fill="#0A151D" opacity="0.68"/>
+<text x="66" y="422" fill="#E9F4FF" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Basic TypeScript</text>
+<text x="258" y="422" fill="#8298B0" font-size="13" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">5 files</text>
+<rect x="355" y="408" width="226" height="12" rx="6" fill="#254B63"/>
+<rect x="355" y="425" width="56" height="12" rx="6" fill="url(#barSlice)"/>
+<line x1="483" y1="403" x2="483" y2="443" stroke="#FF5CA8" stroke-width="2"/>
+<circle cx="483" cy="444" r="4" fill="#FF5CA8"/>
+<text x="989" y="424" fill="#42F5B3" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">75.40%</text>
+<text x="1077" y="424" fill="#FFD166" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">21.06%</text>
+<text x="589" y="417" fill="#9BB0C8" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">1.1K</text>
+<text x="419" y="435" fill="#BFE9FF" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">264</text>
+<rect x="52" y="451" width="1096" height="40" rx="10" fill="#0A151D" opacity="0.68"/>
+<text x="66" y="476" fill="#E9F4FF" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Medium Java Server</text>
+<text x="258" y="476" fill="#8298B0" font-size="13" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">6 files</text>
+<rect x="355" y="462" width="534" height="12" rx="6" fill="#254B63"/>
+<rect x="355" y="479" width="201" height="12" rx="6" fill="url(#barSlice)"/>
+<line x1="445" y1="457" x2="445" y2="497" stroke="#FF5CA8" stroke-width="2"/>
+<circle cx="445" cy="498" r="4" fill="#FF5CA8"/>
+<text x="989" y="478" fill="#42F5B3" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">62.33%</text>
+<text x="1077" y="478" fill="#FFD166" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">14.81%</text>
+<text x="897" y="471" fill="#9BB0C8" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">2.5K</text>
+<text x="564" y="489" fill="#BFE9FF" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">956</text>
+<rect x="52" y="505" width="1096" height="40" rx="10" fill="#0A151D" opacity="0.68"/>
+<text x="66" y="530" fill="#E9F4FF" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Medium Kotlin Android</text>
+<text x="258" y="530" fill="#8298B0" font-size="13" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">5 files</text>
+<rect x="355" y="516" width="590" height="12" rx="6" fill="#254B63"/>
+<rect x="355" y="533" width="247" height="12" rx="6" fill="url(#barSlice)"/>
+<line x1="649" y1="511" x2="649" y2="551" stroke="#FF5CA8" stroke-width="2"/>
+<circle cx="649" cy="552" r="4" fill="#FF5CA8"/>
+<text x="989" y="532" fill="#42F5B3" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">58.24%</text>
+<text x="1077" y="532" fill="#FFD166" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">48.25%</text>
+<text x="953" y="525" fill="#9BB0C8" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">2.8K</text>
+<text x="610" y="543" fill="#BFE9FF" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">1.2K</text>
+<rect x="52" y="559" width="1096" height="40" rx="10" fill="#0A151D" opacity="0.68"/>
+<text x="66" y="584" fill="#E9F4FF" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Medium Python Service</text>
+<text x="258" y="584" fill="#8298B0" font-size="13" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">5 files</text>
+<rect x="355" y="570" width="610" height="12" rx="6" fill="#254B63"/>
+<rect x="355" y="587" width="165" height="12" rx="6" fill="url(#barSlice)"/>
+<line x1="718" y1="565" x2="718" y2="605" stroke="#FF5CA8" stroke-width="2"/>
+<circle cx="718" cy="606" r="4" fill="#FF5CA8"/>
+<text x="989" y="586" fill="#42F5B3" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">72.97%</text>
+<text x="1077" y="586" fill="#FFD166" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">59.54%</text>
+<text x="973" y="579" fill="#9BB0C8" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">2.9K</text>
+<text x="528" y="597" fill="#BFE9FF" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">783</text>
+<rect x="52" y="613" width="1096" height="40" rx="10" fill="#0A151D" opacity="0.68"/>
+<text x="66" y="638" fill="#E9F4FF" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700">Medium TypeScript App</text>
+<text x="258" y="638" fill="#8298B0" font-size="13" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">5 files</text>
+<rect x="355" y="624" width="516" height="12" rx="6" fill="#254B63"/>
+<rect x="355" y="641" width="103" height="12" rx="6" fill="url(#barSlice)"/>
+<line x1="746" y1="619" x2="746" y2="659" stroke="#FF5CA8" stroke-width="2"/>
+<circle cx="746" cy="660" r="4" fill="#FF5CA8"/>
+<text x="989" y="640" fill="#42F5B3" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">80.05%</text>
+<text x="1077" y="640" fill="#FFD166" font-size="16" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">64.18%</text>
+<text x="879" y="633" fill="#9BB0C8" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">2.5K</text>
+<text x="466" y="651" fill="#BFE9FF" font-size="12" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">489</text>
+<rect x="62" y="757" width="1076" height="46" rx="14" fill="#0A151D" stroke="#243B4D"/>
+<circle cx="90" cy="780" r="6" fill="#5AB8FF"/><text x="106" y="785" fill="#B7C7DA" font-size="14" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">estimated source tokens</text>
+<circle cx="330" cy="780" r="6" fill="#42F5B3"/><text x="346" y="785" fill="#B7C7DA" font-size="14" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">focused slice tokens</text>
+<circle cx="555" cy="780" r="6" fill="#FF5CA8"/><text x="571" y="785" fill="#B7C7DA" font-size="14" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">source-to-context pack saving</text>
+<text x="795" y="787" fill="#9BB0C8" font-size="14" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="500">Regenerate: python scripts/render_benchmark_chart.py</text>
+</svg>

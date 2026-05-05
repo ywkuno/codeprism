@@ -216,6 +216,58 @@ def test_benchmark_suite_writes_json_and_markdown_summary(tmp_path: Path) -> Non
     assert "Markdown summary" in result.stdout
 
 
+def test_benchmark_chart_renderer_writes_svg(tmp_path: Path) -> None:
+    suite = tmp_path / "suite.json"
+    out = tmp_path / "benchmark.svg"
+    suite.write_text(
+        json.dumps(
+            {
+                "fixtures": [
+                    {
+                        "name": "Python Fixture",
+                        "files_seen": 5,
+                        "source_estimated_tokens": 1200,
+                        "slice_estimated_tokens": 300,
+                        "source_to_slice_saved_percent": 75.0,
+                        "source_to_context_saved_percent": 50.0,
+                    },
+                    {
+                        "name": "TypeScript Fixture",
+                        "files_seen": 4,
+                        "source_estimated_tokens": 1000,
+                        "slice_estimated_tokens": 400,
+                        "source_to_slice_saved_percent": 60.0,
+                        "source_to_context_saved_percent": 25.0,
+                    },
+                ],
+                "summary": {"average_source_to_slice_saved_percent": 67.5},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).parents[1] / "scripts" / "render_benchmark_chart.py"),
+            str(suite),
+            "--out",
+            str(out),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    svg = out.read_text(encoding="utf-8")
+    assert "CodePrism Benchmark Snapshot" in svg
+    assert "Python Fixture" in svg
+    assert "TypeScript Fixture" in svg
+    assert "67.50%" in svg
+    assert "Token counts are estimates" in svg
+
+
 def test_benchmark_compare_reports_regressions_and_can_fail(tmp_path: Path) -> None:
     baseline = tmp_path / "baseline.json"
     current = tmp_path / "current.json"

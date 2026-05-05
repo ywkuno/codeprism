@@ -92,13 +92,16 @@ The checked-in fixture suite is the public baseline. It is intentionally small e
 | --- | --- | ---: | ---: | ---: | ---: |
 | 8 checked-in fixtures | Python, TypeScript, Java, Kotlin | 40 | 15,291 tokens | 4,801 tokens | 68.75% average per fixture |
 
+![CodePrism benchmark chart](docs/assets/benchmark-snapshot.svg)
+
 Run the same suite locally:
 
 ```bash
 codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
+python scripts/render_benchmark_chart.py .codeprism/benchmarks/suite.json --out docs/assets/benchmark-snapshot.svg
 ```
 
-The suite writes per-fixture JSON reports plus `.codeprism/benchmarks/suite.md`. See [docs/benchmarks.md](docs/benchmarks.md) for the full table, caveats, and release-review workflow.
+The suite writes per-fixture JSON reports plus `.codeprism/benchmarks/suite.md`. The chart renderer turns that JSON into the checked-in SVG above. See [docs/benchmarks.md](docs/benchmarks.md) for the full table, caveats, and release-review workflow.
 
 ### Field Notes
 
