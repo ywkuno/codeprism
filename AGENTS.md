@@ -9,6 +9,9 @@ This repo implements CodePrism: a local-first codebase mapping tool that generat
 - Keep code local-first. Do not add network calls unless explicitly requested.
 - Prefer deterministic AST/static parsing before LLM summarization.
 - Every generated context artifact must be inspectable text or SQLite.
+- Finish every task pass by updating the relevant project documentation and
+  creating a git commit for the completed pass, unless the user explicitly says
+  not to commit.
 - Avoid viral-project style claims. Use measured language and benchmark honestly.
 - Keep the CLI working on Windows, macOS, and Linux.
 - Do not introduce heavyweight dependencies unless there is a clear reason.

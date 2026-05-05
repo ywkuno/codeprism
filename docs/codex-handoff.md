@@ -13,6 +13,11 @@ Primary product focus: context saving and token optimization. Treat visualizatio
 
 Public CLI examples use `codeprism`. Generated artifacts now default to `.codeprism/`; existing `.contextopt/` artifacts are still readable as a legacy fallback. The legacy `contextopt` console command and Python package path remain available for compatibility.
 
+## Task completion protocol
+
+Every task pass should end with relevant documentation updates and a git commit
+covering that completed pass, unless the user explicitly says not to commit.
+
 ## First task
 
 Run:
