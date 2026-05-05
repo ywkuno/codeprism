@@ -32,6 +32,7 @@ codeprism gain
 codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
 codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
 codeprism benchmark-compare .codeprism/benchmarks/suite.json .codeprism/benchmarks/suite.json --out .codeprism/benchmarks/comparison.md
+python scripts/render_benchmark_chart.py .codeprism/benchmarks/suite.json --out docs/assets/benchmark-snapshot.svg
 python scripts/benchmark_trend.py --baseline-suite .codeprism/benchmarks/suite.json
 python scripts/pre_release_proof.py --baseline-suite .codeprism/benchmarks/suite.json
 codeprism audit-session examples/codex-session.sample.jsonl
@@ -48,6 +49,7 @@ codeprism doctor
 - `src/contextopt/graph.py` — graph model and SQLite persistence
 - `src/contextopt/exporters/` — context pack exporters
 - `integrations/` — Claude/Codex/Copilot integration templates
+- `scripts/render_benchmark_chart.py` — deterministic SVG renderer for benchmark charts
 - `docs/` — design, roadmap, agent handoff
 - `docs/release.md` — public release checklist and proof-pack workflow
 - `CONTRIBUTING.md` — contribution workflow, benchmark rules, and privacy expectations

@@ -42,6 +42,7 @@ codeprism gain
 codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
 codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
 codeprism benchmark-compare .codeprism/benchmarks/suite.json .codeprism/benchmarks/suite.json --out .codeprism/benchmarks/comparison.md
+python scripts/render_benchmark_chart.py .codeprism/benchmarks/suite.json --out docs/assets/benchmark-snapshot.svg
 python scripts/benchmark_trend.py --baseline-suite .codeprism/benchmarks/suite.json
 python scripts/pre_release_proof.py --baseline-suite .codeprism/benchmarks/suite.json
 codeprism onboard --notes "Project purpose, build commands, and safety notes."
@@ -105,6 +106,7 @@ Then inspect generated files under `.codeprism/`.
 - `codeprism onboard` and `codeprism memory` manage inspectable local project memory under `.codeprism/memory/`.
 - `codeprism benchmark` writes reproducible JSON savings reports.
 - `codeprism benchmark-suite` writes a cross-fixture JSON report plus Markdown summary table.
+- `scripts/render_benchmark_chart.py` renders the benchmark suite JSON into the checked-in cyber-style SVG chart under `docs/assets/benchmark-snapshot.svg`.
 - `codeprism benchmark-compare` compares two suite JSON reports and can fail CI on savings regressions.
 - `scripts/benchmark_trend.py` wraps release benchmark review and can optionally download a public GitHub Actions artifact through the GitHub CLI.
 - `scripts/pre_release_proof.py` writes a local proof packet with benchmark trend output, sample session audit output, test/lint logs, and public hygiene scan results.

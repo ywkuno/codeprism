@@ -67,6 +67,13 @@ GitHub generated release notes use `.github/release.yml` to group pull requests 
 
 If README benchmark copy changes, regenerate the fixture suite first and keep the README snapshot aligned with `docs/benchmarks.md`. Larger real-repo examples may appear as field notes only when they are anonymized and clearly separated from reproducible fixture results.
 
+When fixture numbers change, regenerate both the Markdown table and SVG chart:
+
+```bash
+codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
+python scripts/render_benchmark_chart.py .codeprism/benchmarks/suite.json --out docs/assets/benchmark-snapshot.svg
+```
+
 ## Public Hygiene
 
 Before publishing, confirm the proof packet hygiene scan passed:

@@ -11,9 +11,10 @@ Run the checked-in suite:
 
 ```bash
 codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
+python scripts/render_benchmark_chart.py .codeprism/benchmarks/suite.json --out docs/assets/benchmark-snapshot.svg
 ```
 
-The command writes per-fixture JSON reports, a combined `suite.json`, and a Markdown summary at `.codeprism/benchmarks/suite.md`.
+The benchmark command writes per-fixture JSON reports, a combined `suite.json`, and a Markdown summary at `.codeprism/benchmarks/suite.md`. The chart renderer turns the suite JSON into `docs/assets/benchmark-snapshot.svg` for README and docs display.
 
 Compare two suite runs:
 
@@ -50,6 +51,8 @@ This writes `.codeprism/pre-release/README.md` plus benchmark trend output, samp
 ## Current Fixture Suite
 
 The current suite covers 8 fixtures across Python, TypeScript, Java, and Kotlin. Across all fixtures it maps 40 files, compares 15,291 estimated source tokens against 4,801 estimated focused-slice tokens, and reports a 68.75% average per-fixture source-to-slice reduction.
+
+![CodePrism benchmark chart](assets/benchmark-snapshot.svg)
 
 | Fixture | Files | Source tokens | Slice tokens | Source -> slice | Source -> context pack |
 | --- | ---: | ---: | ---: | ---: | ---: |
