@@ -32,6 +32,7 @@ codeprism gain
 codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
 codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
 codeprism benchmark-compare .codeprism/benchmarks/suite.json .codeprism/benchmarks/suite.json --out .codeprism/benchmarks/comparison.md
+python scripts/benchmark_trend.py --baseline-suite .codeprism/benchmarks/suite.json
 codeprism audit-session examples/codex-session.sample.jsonl
 codeprism mcp --list-tools
 codeprism setup --target project

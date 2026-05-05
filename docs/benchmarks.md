@@ -18,6 +18,22 @@ codeprism benchmark-compare previous-suite.json .codeprism/benchmarks/suite.json
 
 Add `--fail-on-regression --regression-threshold 5` when you want CI or a release script to fail if any matched fixture loses more than five percentage points of estimated source-to-slice savings.
 
+For release review, use the maintainer helper:
+
+```bash
+python scripts/benchmark_trend.py --baseline-suite previous-suite.json
+```
+
+That local mode never calls GitHub. It runs the current suite, compares it to the supplied baseline, and writes `.codeprism/benchmark-trends/comparison.md`.
+
+To compare against the latest successful public workflow artifact, install and authenticate the GitHub CLI, then omit `--baseline-suite`:
+
+```bash
+python scripts/benchmark_trend.py --repo kunolabs/codeprism --python-version 3.12
+```
+
+The artifact mode downloads `codeprism-benchmarks-py3.12`, finds its `suite.json`, runs the current local suite, and writes a Markdown trend report. This is an explicit maintainer workflow; normal CodePrism commands do not make network calls.
+
 ## Current Fixture Suite
 
 | Fixture | Files | Source tokens | Slice tokens | Source -> slice | Source -> context pack |
@@ -52,4 +68,4 @@ The `medium-*` fixtures add a small amount of generated or noisy code around a f
 
 ## CI Artifacts
 
-The GitHub Actions smoke job uploads benchmark JSON and Markdown reports for each Python version as `codeprism-benchmarks-py<version>`. Download two artifacts and run `codeprism benchmark-compare` when reviewing a performance-sensitive change or preparing release notes.
+The GitHub Actions smoke job uploads benchmark JSON and Markdown reports for each Python version as `codeprism-benchmarks-py<version>`. Download two artifacts and run `codeprism benchmark-compare`, or use `scripts/benchmark_trend.py`, when reviewing a performance-sensitive change or preparing release notes.

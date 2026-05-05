@@ -106,9 +106,11 @@ To reproduce the public fixture table locally:
 ```bash
 codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
 codeprism benchmark-compare previous-suite.json .codeprism/benchmarks/suite.json --out .codeprism/benchmarks/comparison.md
+python scripts/benchmark_trend.py --baseline-suite previous-suite.json
 ```
 
 The suite command writes per-fixture JSON reports plus `.codeprism/benchmarks/suite.md`, a Markdown summary table suitable for release notes or README updates. The compare command writes a Markdown delta report between two suite JSON files.
+The trend helper wraps the release-review flow. If you omit `--baseline-suite`, it uses the GitHub CLI to download the latest successful benchmark artifact from the public workflow.
 
 Current checked-in fixture suite: 8 Python, TypeScript, Java, and Kotlin fixtures with a 68.75% average estimated source-to-slice reduction. See [docs/benchmarks.md](docs/benchmarks.md) for the full reproducible table and caveats.
 
@@ -310,6 +312,7 @@ apps/pixel-brain/     Future replay renderer scaffold
 docs/                 Architecture, roadmap, and schemas
 examples/             Sample project and activity stream
 integrations/         Claude, Codex, and Copilot templates
+scripts/              Maintainer helpers for benchmark and release review
 tests/                Regression tests
 ```
 
@@ -327,6 +330,7 @@ codeprism get "heading::README.md::Quick Start"
 codeprism gain
 codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
 codeprism benchmark-compare .codeprism/benchmarks/suite.json .codeprism/benchmarks/suite.json --out .codeprism/benchmarks/comparison.md
+python scripts/benchmark_trend.py --baseline-suite .codeprism/benchmarks/suite.json
 codeprism visualize --activity examples/activity-stream.sample.jsonl --outdir .codeprism/visual
 codeprism slice main --out .codeprism/slices/main.md
 codeprism visualize --context .codeprism/slices/main.json --outdir .codeprism/visual
