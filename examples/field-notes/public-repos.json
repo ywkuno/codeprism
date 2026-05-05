@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "targets": [
+    {
+      "name": "Graphify",
+      "slug": "graphify",
+      "url": "https://github.com/safishamsi/graphify",
+      "path": "graphify",
+      "query": "graph query mcp install privacy"
+    },
+    {
+      "name": "Serena",
+      "slug": "serena",
+      "url": "https://github.com/oraios/serena",
+      "path": "serena",
+      "query": "semantic retrieval editing references mcp"
+    },
+    {
+      "name": "GSD",
+      "slug": "gsd",
+      "url": "https://github.com/gsd-build/get-shit-done",
+      "path": "get-shit-done",
+      "query": "planning execution verification workflow persistence"
+    },
+    {
+      "name": "jCodeMunch MCP",
+      "slug": "jcodemunch-mcp",
+      "url": "https://github.com/jgravelle/jcodemunch-mcp",
+      "path": "jcodemunch-mcp",
+      "query": "symbol retrieval changed symbols token savings"
+    },
+    {
+      "name": "LeanCTX",
+      "slug": "lean-ctx",
+      "url": "https://github.com/yvgude/lean-ctx",
+      "path": "lean-ctx",
+      "query": "read modes hooks mcp cache token savings"
+    },
+    {
+      "name": "CocoIndex Code",
+      "slug": "cocoindex-code",
+      "url": "https://github.com/cocoindex-io/cocoindex-code",
+      "path": "cocoindex-code",
+      "query": "semantic search incremental indexing mcp skill"
+    },
+    {
+      "name": "codesight",
+      "slug": "codesight",
+      "url": "https://github.com/Houseofmvps/codesight",
+      "path": "codesight",
+      "query": "wiki context generator mcp ai config"
+    }
+  ]
+}

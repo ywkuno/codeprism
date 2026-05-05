@@ -86,6 +86,18 @@ The real product loop is larger than this table: run `codeprism prime "<task>"`,
 
 When README or release notes mention larger real-world reductions, keep those examples clearly labeled as field notes. Do not mix them into the reproducible fixture average unless the repository, fixture data, and commands are checked in.
 
+## Field Note Runner
+
+For public repo comparison work, use the maintainer runner instead of hand-copying command output:
+
+```bash
+python scripts/run_field_notes.py --config examples/field-notes/public-repos.json --repos-root external
+```
+
+The runner expects local checkouts under `external/` and does not clone or call the network. Missing repos are reported with clone hints by default; add `--fail-on-missing` only when every checkout is intentionally prepared. Results are written under `.codeprism/field-notes/` as per-target `result.json` files plus `summary.json` and `summary.md`.
+
+Field notes should stay separate from the checked-in fixture suite. They can support product intuition, roadmap choices, and dated public examples, but they should not replace the reproducible fixture average.
+
 ## Fixture Groups
 
 The `basic-*` fixtures are tiny language smoke tests. They keep Python, TypeScript, Java, and Kotlin extraction behavior visible.

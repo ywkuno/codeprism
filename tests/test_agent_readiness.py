@@ -535,6 +535,62 @@ def test_pre_release_proof_pack_uses_local_checks(tmp_path: Path) -> None:
     }
 
 
+def test_field_note_runner_writes_summary_without_touching_target(tmp_path: Path) -> None:
+    repo = tmp_path / "public-repo"
+    repo.mkdir()
+    (repo / "README.md").write_text("# Public Fixture\n\nA repo for field notes.\n", encoding="utf-8")
+    (repo / "app.py").write_text(
+        "def main():\n"
+        f"    notes = {['field note body'] * 150!r}\n"
+        "    return len(notes)\n",
+        encoding="utf-8",
+    )
+    config = tmp_path / "field-notes.json"
+    config.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "targets": [
+                    {
+                        "name": "Public Fixture",
+                        "slug": "public-fixture",
+                        "root": str(repo),
+                        "query": "main",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "field-notes-out"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/run_field_notes.py",
+            "--config",
+            str(config),
+            "--outdir",
+            str(outdir),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((outdir / "summary.json").read_text(encoding="utf-8"))
+    markdown = (outdir / "summary.md").read_text(encoding="utf-8")
+    target = summary["results"][0]
+    assert summary["summary"]["passed"] == 1
+    assert target["status"] == "passed"
+    assert target["metrics"]["source_estimated_tokens"] > 0
+    assert target["metrics"]["slice_estimated_tokens"] > 0
+    assert "Public Fixture" in markdown
+    assert (outdir / "public-fixture" / "result.json").exists()
+    assert not (repo / ".codeprism").exists()
+
+
 def test_mcp_tool_specs_expose_core_context_tools() -> None:
     tool_names = {tool["name"] for tool in mcp_tool_specs()}
 

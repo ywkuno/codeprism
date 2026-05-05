@@ -39,6 +39,7 @@ python scripts/render_benchmark_chart.py .codeprism/benchmarks/suite.json --out 
 python scripts/render_benchmark_chart.py .codeprism/benchmarks/suite.json --out docs/assets/benchmark-snapshot.svg --check
 python scripts/benchmark_trend.py --baseline-suite .codeprism/benchmarks/suite.json
 python scripts/pre_release_proof.py --baseline-suite .codeprism/benchmarks/suite.json
+python scripts/run_field_notes.py --config examples/field-notes/public-repos.json --repos-root external
 codeprism audit-session examples/codex-session.sample.jsonl
 codeprism mcp --list-tools
 codeprism setup --target project

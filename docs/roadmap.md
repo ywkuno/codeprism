@@ -110,6 +110,7 @@ Context saving is the main product direction. Visuals are the inspection and gam
 - CI uploads benchmark JSON and Markdown reports as artifacts for trend review
 - `scripts/benchmark_trend.py` prepares release benchmark trend reports from either a local baseline suite or a GitHub Actions artifact
 - `scripts/pre_release_proof.py` collects benchmark trend, session audit, test/lint, and public hygiene evidence into a local proof packet
+- `scripts/run_field_notes.py` runs dated local field-note measurements against public repo checkouts without cloning or writing into those repos
 - `docs/release.md`, `.github/RELEASE_TEMPLATE.md`, and `.github/release.yml` keep public releases consistent and evidence-backed
 - `codeprism audit-session <session>` audits local Codex JSONL sessions for CodePrism adoption timing, raw reads, search commands, compaction mentions, large outputs, and observed savings
 - `codeprism mcp --list-tools` exposes the experimental MCP tool surface; `codeprism mcp` runs the optional SDK-backed server
@@ -131,7 +132,7 @@ Context saving is the main product direction. Visuals are the inspection and gam
 - Next: improve read signatures with language-aware argument/type summaries where deterministic parsers support them
 - Next: expand MCP resources/prompts and document client setup for Codex, Claude, and other MCP clients
 - Next: add richer reference extraction using deterministic call/reference edges where available
-- Next: add public large-repo comparison fixtures or scripted field-note runs before strengthening external benchmark claims
+- Next: convert selected public field-note runs into checked-in fixture snapshots before strengthening external benchmark claims
 - Next: consume `.codeprism/pre-release/manifest.json` in release/trend checks so proof artifacts are machine-verifiable
 - Next: evaluate hook/read guardrails inspired by adjacent tools, while keeping raw file reads possible when explicitly needed
 

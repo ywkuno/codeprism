@@ -82,7 +82,7 @@ The visual map is useful, but the public front should keep context saving as the
    LeanCTX, jCodeMunch, CocoIndex Code, and codesight all publish strong savings claims. CodePrism should keep checked-in fixture averages separate from dated field notes and route every release through the proof manifest.
 
 4. **Add larger, public, reproducible comparison fixtures before raising claims.**
-   Field notes are useful, but public positioning should rest on fixtures or scripted runs that another maintainer can reproduce without private source or network services.
+   Field notes are useful, but public positioning should rest on fixtures or scripted runs that another maintainer can reproduce without private source or network services. `scripts/run_field_notes.py` now provides the scripted field-note path for local public checkouts.
 
 ## Shipped And Backlog Pulled From This Review
 
@@ -99,6 +99,7 @@ The visual map is useful, but the public front should keep context saving as the
 - `codeprism watch`: optional local refresh loop for active repos.
 - Compaction-safe `.brief.md` beside each slice: small recovery artifact before the full Markdown slice.
 - Public landing assets: short GIF, before/after token example, and cleaner viewer screenshot.
-- External comparison fixtures: add public, reproducible large-repo runs before converting field notes into stronger benchmark copy.
+- External comparison field notes: `scripts/run_field_notes.py` runs CodePrism against local public repo checkouts and writes per-target `result.json` plus summary artifacts.
+- External comparison fixtures: add checked-in public fixture snapshots before converting field notes into stronger benchmark copy.
 - Hook/read enforcement: evaluate a local hook or command wrapper that warns before broad raw reads when a fresh CodePrism map and slice exist.
 - Symbol intelligence: prioritize changed-symbol mapping, call/reference extraction, and risk/hotspot queries over broad semantic summarization.
