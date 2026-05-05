@@ -43,6 +43,7 @@ codeprism benchmark examples/benchmarks/basic-python --query report --out .codep
 codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
 codeprism benchmark-compare .codeprism/benchmarks/suite.json .codeprism/benchmarks/suite.json --out .codeprism/benchmarks/comparison.md
 python scripts/benchmark_trend.py --baseline-suite .codeprism/benchmarks/suite.json
+python scripts/pre_release_proof.py --baseline-suite .codeprism/benchmarks/suite.json
 codeprism onboard --notes "Project purpose, build commands, and safety notes."
 codeprism memory read project
 codeprism mcp --list-tools
@@ -106,6 +107,7 @@ Then inspect generated files under `.codeprism/`.
 - `codeprism benchmark-suite` writes a cross-fixture JSON report plus Markdown summary table.
 - `codeprism benchmark-compare` compares two suite JSON reports and can fail CI on savings regressions.
 - `scripts/benchmark_trend.py` wraps release benchmark review and can optionally download a public GitHub Actions artifact through the GitHub CLI.
+- `scripts/pre_release_proof.py` writes a local proof packet with benchmark trend output, sample session audit output, test/lint logs, and public hygiene scan results.
 - `codeprism mcp --list-tools` shows the experimental MCP tool surface; `codeprism mcp` needs the optional `.[mcp]` extra.
 - `codeprism slice ...` writes Markdown, a compact `.brief.md`, and a same-name JSON manifest for viewer context overlays.
 - `codeprism visualize --context .codeprism/slices/<name>.json ...` highlights included nodes and shows slice-vs-full context estimates.
