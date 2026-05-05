@@ -294,6 +294,61 @@ def test_benchmark_compare_reports_regressions_and_can_fail(tmp_path: Path) -> N
     assert "Benchmark regression detected" in failed.stderr
 
 
+def test_benchmark_trend_script_uses_local_baseline_without_github(tmp_path: Path) -> None:
+    fixtures = tmp_path / "fixtures"
+    fixture = fixtures / "tiny"
+    fixture.mkdir(parents=True)
+    (fixture / "benchmark.config.json").write_text(
+        json.dumps({"name": "Tiny Fixture", "query": "main"}),
+        encoding="utf-8",
+    )
+    (fixture / "app.py").write_text(
+        "def main():\n"
+        f"    notes = {['trend fixture body'] * 120!r}\n"
+        "    return len(notes)\n",
+        encoding="utf-8",
+    )
+    baseline = tmp_path / "baseline.json"
+    baseline.write_text(
+        json.dumps(
+            {
+                "summary": {"average_source_to_slice_saved_percent": 50.0},
+                "fixtures": [
+                    {
+                        "name": "Tiny Fixture",
+                        "source_estimated_tokens": 1000,
+                        "slice_estimated_tokens": 500,
+                        "source_to_slice_saved_percent": 50.0,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "trend"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/benchmark_trend.py",
+            "--baseline-suite",
+            str(baseline),
+            "--fixtures-root",
+            str(fixtures),
+            "--outdir",
+            str(outdir),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Benchmark trend ready." in result.stdout
+    assert (outdir / "current-suite.json").exists()
+    assert "Tiny Fixture" in (outdir / "comparison.md").read_text(encoding="utf-8")
+
+
 def test_mcp_tool_specs_expose_core_context_tools() -> None:
     tool_names = {tool["name"] for tool in mcp_tool_specs()}
 

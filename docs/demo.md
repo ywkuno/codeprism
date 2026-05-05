@@ -52,9 +52,10 @@ codeprism watch . --once
 codeprism benchmark examples/benchmarks/basic-python --query report --out .codeprism/benchmarks/basic-python.json
 codeprism benchmark-suite examples/benchmarks --out .codeprism/benchmarks/suite.json
 codeprism benchmark-compare previous-suite.json .codeprism/benchmarks/suite.json --out .codeprism/benchmarks/comparison.md
+python scripts/benchmark_trend.py --baseline-suite previous-suite.json
 ```
 
-The stats command reports local estimated token counts for source, graph, and context-pack outputs. The gain command reports estimated saved tokens and warns if files changed after the latest map. The benchmark command writes a reproducible JSON report for a fixture or target repo, benchmark-suite writes a cross-fixture JSON plus Markdown summary, and benchmark-compare reports fixture-level savings deltas between two suite runs. These are estimates for comparison, not benchmark claims.
+The stats command reports local estimated token counts for source, graph, and context-pack outputs. The gain command reports estimated saved tokens and warns if files changed after the latest map. The benchmark command writes a reproducible JSON report for a fixture or target repo, benchmark-suite writes a cross-fixture JSON plus Markdown summary, benchmark-compare reports fixture-level savings deltas between two suite runs, and `scripts/benchmark_trend.py` wraps the release-review flow. These are estimates for comparison, not benchmark claims.
 
 ## 4. Install Agent Helpers
 
