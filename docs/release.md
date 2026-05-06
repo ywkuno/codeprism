@@ -121,6 +121,8 @@ git push public --tags
 
 If you later need filtering, publish to a dedicated release branch and apply a scripted filter step before pushing to `public`. Until then, this direct mirror keeps public history intact and keeps `origin` as the private source of truth.
 
+If `public/main` is still in use on the public platform, keep it as a compatibility or archived branch and point the public default branch to `master` so CI and release checks run from the canonical stream.
+
 ## Public Hygiene
 
 Before publishing, confirm the proof packet hygiene scan passed:
