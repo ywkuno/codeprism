@@ -96,6 +96,31 @@ python scripts/render_benchmark_chart.py .codeprism/benchmarks/suite.json --out 
 python scripts/render_benchmark_chart.py .codeprism/benchmarks/suite.json --out docs/assets/benchmark-snapshot.svg --check
 ```
 
+## Public Mirror Flow
+
+This repo uses two fronts:
+
+- `origin` = private canonical repo for daily development (`kunolabs/cortext-lab`)
+- `public` = mirror repo for public release visibility (`kunolabs/codeprism`)
+
+Recommended flow for a public-safe release:
+
+1. Confirm the branch is release-ready and has passed the local release checks.
+2. Confirm no private-only files/paths need filtering.
+3. Mirror `master` directly:
+
+```bash
+git push public master
+```
+
+4. Mirror release tags with the code:
+
+```bash
+git push public --tags
+```
+
+If you later need filtering, publish to a dedicated release branch and apply a scripted filter step before pushing to `public`. Until then, this direct mirror keeps public history intact and keeps `origin` as the private source of truth.
+
 ## Public Hygiene
 
 Before publishing, confirm the proof packet hygiene scan passed:
