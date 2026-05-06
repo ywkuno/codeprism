@@ -98,6 +98,35 @@ The runner expects local checkouts under `external/` and does not clone or call 
 
 Field notes should stay separate from the checked-in fixture suite. They can support product intuition, roadmap choices, and dated public examples, but they should not replace the reproducible fixture average.
 
+### Latest field note snapshot
+
+Run: `2026-05-06T02:54:46Z`
+
+Command:
+
+```bash
+python scripts/run_field_notes.py --config examples/field-notes/public-repos.json --repos-root external --fail-on-missing
+```
+
+Outcome:
+
+- 7 passed
+- 0 missing
+- 0 failed
+- All runs capped to default `--max-tokens 8000` unless source repo language mix forced earlier truncation.
+
+| Target | Source tokens | Slice tokens | Saving |
+| --- | ---: | ---: | ---: |
+| Graphify | 526,883 | 7,991 | 98.48% |
+| Serena | 1,525,349 | 8,000 | 99.48% |
+| GSD | 2,846,370 | 7,995 | 99.72% |
+| jCodeMunch MCP | 1,477,903 | 8,000 | 99.46% |
+| LeanCTX | 1,291,656 | 7,991 | 99.38% |
+| CocoIndex Code | 98,806 | 7,999 | 91.90% |
+| codesight | 237,797 | 7,995 | 96.64% |
+
+Average source-to-slice saving across this snapshot: 96.81%.
+
 ## Fixture Groups
 
 The `basic-*` fixtures are tiny language smoke tests. They keep Python, TypeScript, Java, and Kotlin extraction behavior visible.

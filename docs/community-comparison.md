@@ -4,6 +4,9 @@ This note tracks what CodePrism should learn from adjacent public agent-context 
 
 Latest review pass: 2026-05-05 UTC, based on public project documentation and GitHub READMEs. Popularity, release counts, and exact claims can drift quickly; keep future updates dated and source-backed.
 
+Local comparison evidence pass: 2026-05-06 UTC.
+Field notes were run against local checkouts of Graphify, Serena, GSD, jCodeMunch MCP, LeanCTX, CocoIndex Code, and codesight with `scripts/run_field_notes.py`. All seven targets passed, and all produced non-empty local slices at the default `--max-tokens 8000` budget.
+
 ## Repos Reviewed
 
 - [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)
