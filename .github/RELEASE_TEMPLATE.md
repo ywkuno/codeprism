@@ -28,6 +28,7 @@ Token counts are local estimates for comparison, not billing-grade measurements.
 - Average source-to-slice saving:
 - Notable improvements:
 - Notable regressions:
+- External field-note run (optional): `2026-05-06` executed 7 public repos via `scripts/run_field_notes.py --config examples/field-notes/public-repos.json --repos-root external`; all 7 passed.
 
 ## Upgrade Notes
 
